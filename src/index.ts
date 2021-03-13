@@ -1,11 +1,9 @@
 import Koa from "koa";
-import json from "koa-json";
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import { fetchCache, fetchCommunities, cacheCommunities } from "./utils";
 
 const cache = new Koa();
-cache.use(json());
 cache.use(cors());
 
 const router = new Router();

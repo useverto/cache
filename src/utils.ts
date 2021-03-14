@@ -55,9 +55,6 @@ export const cacheCommunities = async () => {
     communities.push(id);
   }
 
-  try {
-    fs.mkdirSync("./cache");
-  } catch {}
   fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
 };
 

@@ -1,3 +1,6 @@
 import { cacheCommunities } from "./utils";
 
-cacheCommunities();
+(async () => {
+  await cacheCommunities();
+  setInterval(cacheCommunities, 600000);
+})();

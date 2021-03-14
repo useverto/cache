@@ -14,12 +14,12 @@ import (
 )
 
 func main() {
+	syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
+	syncCommunitiesCmd.Start()
+
 	// get all communities
 	http.HandleFunc("/communities", func(w http.ResponseWriter, r *http.Request) {
 		communities, err := fetchCommunities()
-		syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
-
-		syncCommunitiesCmd.Start()
 
 		if err == nil {
 			json.NewEncoder(w).Encode(communities)
@@ -28,7 +28,7 @@ func main() {
 			fmt.Fprint(w, "No cache found")
 		}
 	})
-	// get all community ids
+	// get all contract ids
 	http.HandleFunc("/ids", func(w http.ResponseWriter, r *http.Request) {
 		ids, err := getIDs()
 
@@ -39,15 +39,16 @@ func main() {
 			fmt.Fprint(w, "No cache found")
 		}
 	})
-	// get a community
+	// get a contract
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
 			contractID := strings.Replace(r.URL.String(), "/", "", 1)
-			community, err := fetchCommunity(contractID)
-			syncCommunityCmd := exec.Command("node", "dist/community.js")
 
-			syncCommunityCmd.Env = append(os.Environ(), "COMMUNITY_ID="+contractID)
-			syncCommunityCmd.Start()
+			syncContractCmd := exec.Command("node", "dist/contract.js")
+			syncContractCmd.Env = append(os.Environ(), "CONTRACT_ID="+contractID)
+			syncContractCmd.Run()
+
+			contract, err := fetchContract(contractID)
 
 			if err != nil {
 				w.WriteHeader(http.StatusNoContent)
@@ -55,7 +56,7 @@ func main() {
 				return
 			}
 
-			json.NewEncoder(w).Encode(community)
+			json.NewEncoder(w).Encode(contract)
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -80,12 +81,12 @@ func fetchCommunities() (res []interface{}, err error) {
 	json.Unmarshal([]byte(byteValue), &communityIDs)
 
 	for _, id := range communityIDs {
-		communityCache, err := fetchCommunity(id)
+		contractCache, err := fetchContract(id)
 		if err == nil {
 			result := make(map[string]interface{})
 			result["id"] = id
 
-			for key, val := range communityCache.(map[string]interface{}) {
+			for key, val := range contractCache.(map[string]interface{}) {
 				result[key] = val
 			}
 
@@ -96,9 +97,9 @@ func fetchCommunities() (res []interface{}, err error) {
 	return communities, nil
 }
 
-func fetchCommunity(contract string) (community interface{}, err error) {
+func fetchContract(contract string) (cache interface{}, err error) {
 	res, err := os.Open("./cache/" + contract + ".json")
-	var communityCache map[string]interface{}
+	var contractCache map[string]interface{}
 
 	if err != nil {
 		return nil, err
@@ -106,13 +107,13 @@ func fetchCommunity(contract string) (community interface{}, err error) {
 	defer res.Close()
 	byteValue, _ := ioutil.ReadAll(res)
 
-	json.Unmarshal([]byte(byteValue), &communityCache)
+	json.Unmarshal([]byte(byteValue), &contractCache)
 
 	if _, hasCache := communityCache["res"]; !hasCache {
 		return nil, errors.New("No data cached in cache file")
 	}
 
-	return communityCache["res"], nil
+	return contractCache["res"], nil
 }
 
 func getIDs() (ids []string, err error) {

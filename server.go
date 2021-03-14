@@ -53,7 +53,14 @@ func fetchCommunities() []interface{} {
 	for _, id := range communityIDs {
 		communityCache, err := fetchCommunity(id)
 		if err == nil {
-			communities = append(communities, communityCache)
+			result := make(map[string]interface{})
+			result["id"] = id
+
+			for key, val := range communityCache.(map[string]interface{}) {
+				result[key] = val
+			}
+
+			communities = append(communities, result)
 		}
 	}
 

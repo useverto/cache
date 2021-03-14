@@ -22,7 +22,7 @@ export const fetchCache = async (contract: string) => {
   let content: any | undefined;
   let cache: any | undefined;
   try {
-    const res = fs.readFileSync("./cache.json").toString();
+    const res = fs.readFileSync(`./cache/${contract}.json`).toString();
     content = JSON.parse(res);
     cache = content[contract];
   } catch {}
@@ -32,12 +32,12 @@ export const fetchCache = async (contract: string) => {
   } else {
     const res = await readContract(client, contract, undefined, true);
 
+    try {
+      fs.mkdirSync("./cache");
+    } catch {}
     fs.writeFileSync(
-      "./cache.json",
-      JSON.stringify({
-        ...content,
-        [contract]: { interaction: latestInteraction, res },
-      })
+      `./cache/${contract}.json`,
+      JSON.stringify({ interaction: latestInteraction, res })
     );
 
     return res;
@@ -51,19 +51,31 @@ export const cacheCommunities = async () => {
   for (const edge of res) {
     const id = edge.node.id;
 
-    communities.push({
-      id,
-      ...(await fetchCache(id)),
-    });
+    await fetchCache(id);
+    communities.push(id);
   }
 
-  fs.writeFileSync("./communities.json", JSON.stringify(communities));
+  try {
+    fs.mkdirSync("./cache");
+  } catch {}
+  fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
 };
 
 export const fetchCommunities = async () => {
   const main = async () => {
-    const res = fs.readFileSync("./communities.json").toString();
-    return JSON.parse(res);
+    const communities = JSON.parse(
+      fs.readFileSync("./cache/communities.json").toString()
+    );
+
+    const res = [];
+    for (const id of communities) {
+      res.push({
+        id,
+        ...JSON.parse(fs.readFileSync(`./cache/${id}.json`).toString()),
+      });
+    }
+
+    return res;
   };
 
   try {

@@ -69,9 +69,13 @@ export const fetchCommunities = async () => {
 
     const res = [];
     for (const id of communities) {
+      const cache = JSON.parse(
+        fs.readFileSync(`./cache/${id}.json`).toString()
+      );
+
       res.push({
         id,
-        ...JSON.parse(fs.readFileSync(`./cache/${id}.json`).toString()),
+        ...cache.res,
       });
     }
 

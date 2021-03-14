@@ -63,7 +63,11 @@ func main() {
 		fmt.Fprint(w, "Not Found")
 	})
 
-	http.ListenAndServe(":3000", nil)
+	port := os.Getenv("PORT")
+	if len(port) == 0 {
+		port = "3000"
+	}
+	http.ListenAndServe(":"+port, nil)
 }
 
 func fetchCommunities() (res []interface{}, err error) {
@@ -109,7 +113,7 @@ func fetchContract(contract string) (cache interface{}, err error) {
 
 	json.Unmarshal([]byte(byteValue), &contractCache)
 
-	if _, hasCache := communityCache["res"]; !hasCache {
+	if _, hasCache := contractCache["res"]; !hasCache {
 		return nil, errors.New("No data cached in cache file")
 	}
 

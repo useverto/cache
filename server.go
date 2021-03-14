@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
 func main() {
+	// get all communities
 	http.HandleFunc("/communities", func(w http.ResponseWriter, r *http.Request) {
 		communities, err := fetchCommunities()
 		syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
@@ -26,6 +28,18 @@ func main() {
 			fmt.Fprint(w, "No cache found")
 		}
 	})
+	// get all community ids
+	http.HandleFunc("/ids", func(w http.ResponseWriter, r *http.Request) {
+		ids, err := getIDs()
+
+		if err == nil {
+			json.NewEncoder(w).Encode(ids)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+			fmt.Fprint(w, "No cache found")
+		}
+	})
+	// get a community
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
 			contractID := strings.Replace(r.URL.String(), "/", "", 1)
@@ -99,4 +113,19 @@ func fetchCommunity(contract string) (community interface{}, err error) {
 	}
 
 	return communityCache["res"], nil
+}
+
+func getIDs() (ids []string, err error) {
+	err = filepath.Walk("./cache", func(path string, info os.FileInfo, err error) error {
+		regex := regexp.MustCompile(`cache\/|\.json`)
+		contractID := string(regex.ReplaceAll([]byte(path), []byte("")))
+
+		if matched, _ := regexp.MatchString("(?i)[a-z0-9_-]{43}", contractID); matched {
+			ids = append(ids, contractID)
+		}
+
+		return nil
+	})
+
+	return ids, nil
 }

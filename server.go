@@ -7,22 +7,37 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 )
 
 func main() {
 	http.HandleFunc("/communities", func(w http.ResponseWriter, r *http.Request) {
-		communities := fetchCommunities()
-		json.NewEncoder(w).Encode(communities)
+		communities, err := fetchCommunities()
+		syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
+
+		syncCommunitiesCmd.Start()
+
+		if err == nil {
+			json.NewEncoder(w).Encode(communities)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+			fmt.Fprint(w, "No cache found")
+		}
 	})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
-			community, err := fetchCommunity(strings.Replace(r.URL.String(), "/", "", 1))
+			contractID := strings.Replace(r.URL.String(), "/", "", 1)
+			community, err := fetchCommunity(contractID)
+			syncCommunityCmd := exec.Command("node", "dist/community.js")
+
+			syncCommunityCmd.Env = append(os.Environ(), "COMMUNITY_ID="+contractID)
+			syncCommunityCmd.Start()
 
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "Server error")
+				w.WriteHeader(http.StatusNoContent)
+				fmt.Fprint(w, "No cache found")
 				return
 			}
 
@@ -36,13 +51,13 @@ func main() {
 	http.ListenAndServe(":3000", nil)
 }
 
-func fetchCommunities() []interface{} {
+func fetchCommunities() (res []interface{}, err error) {
 	communitiesCache, err := os.Open("./cache/communities.json")
 	var communityIDs []string
 	var communities []interface{}
 
 	if err != nil {
-		fmt.Printf("Could not read communities cacha: %s", err)
+		return nil, errors.New("Could not read communities cache")
 	}
 
 	defer communitiesCache.Close()
@@ -64,7 +79,7 @@ func fetchCommunities() []interface{} {
 		}
 	}
 
-	return communities
+	return communities, nil
 }
 
 func fetchCommunity(contract string) (community interface{}, err error) {

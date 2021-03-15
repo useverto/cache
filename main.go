@@ -19,6 +19,7 @@ func main() {
 
 	// get all communities
 	http.HandleFunc("/communities", func(w http.ResponseWriter, r *http.Request) {
+		addCors(&w)
 		communities, err := fetchCommunities()
 
 		if err == nil {
@@ -30,6 +31,7 @@ func main() {
 	})
 	// get all contract ids
 	http.HandleFunc("/ids", func(w http.ResponseWriter, r *http.Request) {
+		addCors(&w)
 		ids, err := getIDs()
 
 		if err == nil {
@@ -41,6 +43,7 @@ func main() {
 	})
 	// get a contract
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		addCors(&w)
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
 			contractID := strings.Replace(r.URL.String(), "/", "", 1)
 
@@ -68,6 +71,10 @@ func main() {
 		port = "3000"
 	}
 	http.ListenAndServe(":"+port, nil)
+}
+
+func addCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
 func fetchCommunities() (res []interface{}, err error) {

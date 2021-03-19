@@ -12,14 +12,16 @@ const client = new Arweave({
 const gql = new ArDB(client);
 
 export const fetchCache = async (contract: string) => {
-  const res: any = await gql
-    .search()
-    .appName("SmartWeaveAction")
-    .tag("Contract", contract)
-    .findOne({ block: { max: (await client.network.getInfo()).height } });
+  let latestInteraction = "";
+  try {
+    const res: any = await gql
+      .search()
+      .appName("SmartWeaveAction")
+      .tag("Contract", contract)
+      .findOne({ block: { max: (await client.network.getInfo()).height } });
 
-  const edge = res[0];
-  const latestInteraction = edge ? edge.node.id : "";
+    latestInteraction = res[0].node.id;
+  } catch {}
 
   let content: any | undefined;
   let cache: any | undefined;

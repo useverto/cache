@@ -5,6 +5,7 @@
   },
   "dependencies": {
     "ar-gql": "^0.0.3",
+    "ardb": "^1.0.2",
     "arweave": "^1.10.11",
     "smartweave": "^0.4.27"
   },

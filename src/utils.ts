@@ -1,15 +1,17 @@
 import Arweave from "arweave";
-import { run, all } from "ar-gql";
+import ArDB from "ardb";
+import { run } from "ar-gql";
 import interactionQuery from "./queries/interaction";
 import fs from "fs";
 import { readContract } from "smartweave";
-import communitiesQuery from "./queries/communities";
 
 const client = new Arweave({
   host: "arweave.net",
   port: 443,
   protocol: "https",
 });
+
+const gql = new ArDB(client);
 
 export const fetchCache = async (contract: string) => {
   const res = await run(interactionQuery, {
@@ -45,7 +47,12 @@ export const fetchCache = async (contract: string) => {
 };
 
 export const cacheCommunities = async () => {
-  const res = await all(communitiesQuery);
+  const res: any = await gql
+    .search()
+    .appName("SmartWeaveContract")
+    .tag("Contract-Src", "ngMml4jmlxu0umpiQCsHgPX2pb_Yz6YDB8f7G6j-tpI")
+    .findAll();
+
   const communities = [];
 
   for (const edge of res) {

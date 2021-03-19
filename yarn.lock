@@ -79,6 +79,13 @@ ar-gql@^0.0.3:
   dependencies:
     node-fetch "^2.6.1"
 
+ardb@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/ardb/-/ardb-1.0.2.tgz#cb6c11a7705a2955063c9635105499675df889fc"
+  integrity sha512-kg0IoM1VFR8bj3moY8oMsgTFHL61ven72Knkv6/gVNJGtuGBzWHJNr1Wgeb1tqURrNi4jztBd0dhXKgBJo+g2w==
+  dependencies:
+    arweave "^1.10.11"
+
 articles@~0.2.1:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/articles/-/articles-0.2.2.tgz#cc6b429f8cfa811f41e7a08505abbb4e45503197"

@@ -59,12 +59,11 @@ export const cacheCommunities = async () => {
 
   for (const edge of res) {
     const id = edge.node.id;
-
     await fetchCache(id);
-    communities.push(id);
-  }
 
-  fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
+    communities.push(id);
+    fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
+  }
 };
 
 export const fetchCommunities = async () => {

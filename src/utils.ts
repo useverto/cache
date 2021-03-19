@@ -58,6 +58,17 @@ export const cacheCommunities = async () => {
   const communities = [];
 
   for (const edge of res) {
+    // Filter out the "1111" PSCs for now.
+    const rawState = edge.node.tags.find(
+      (tag: any) => tag.name === "Init-State"
+    )?.value;
+    if (rawState) {
+      const state = JSON.parse(rawState);
+      if (state.ticker && state.ticker.startsWith("1111-")) {
+        continue;
+      }
+    }
+
     const id = edge.node.id;
     await fetchCache(id);
 

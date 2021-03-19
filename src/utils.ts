@@ -1,7 +1,5 @@
 import Arweave from "arweave";
 import ArDB from "ardb";
-import { run } from "ar-gql";
-import interactionQuery from "./queries/interaction";
 import fs from "fs";
 import { readContract } from "smartweave";
 
@@ -14,11 +12,13 @@ const client = new Arweave({
 const gql = new ArDB(client);
 
 export const fetchCache = async (contract: string) => {
-  const res = await run(interactionQuery, {
-    contract,
-    block: (await client.network.getInfo()).height,
-  });
-  const edge = res.data.transactions.edges[0];
+  const res: any = await gql
+    .search()
+    .appName("SmartWeaveAction")
+    .tag("Contract", contract)
+    .findOne({ block: { max: (await client.network.getInfo()).height } });
+
+  const edge = res[0];
   const latestInteraction = edge ? edge.node.id : "";
 
   let content: any | undefined;

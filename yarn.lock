@@ -14,13 +14,6 @@
   dependencies:
     "@types/cli-color" "*"
 
-"@types/fs-extra@^9.0.8":
-  version "9.0.8"
-  resolved "https://registry.yarnpkg.com/@types/fs-extra/-/fs-extra-9.0.8.tgz#32c3c07ddf8caa5020f84b5f65a48470519f78ba"
-  integrity sha512-bnlTVTwq03Na7DpWxFJ1dvnORob+Otb8xHyUqUWhqvz/Ksg8+JXPlR52oeMSZ37YEOa5PyccbgUNutiQdi13TA==
-  dependencies:
-    "@types/node" "*"
-
 "@types/inquirer@^7.3.1":
   version "7.3.1"
   resolved "https://registry.yarnpkg.com/@types/inquirer/-/inquirer-7.3.1.tgz#1f231224e7df11ccfaf4cf9acbcc3b935fea292d"
@@ -71,13 +64,6 @@ ansi-styles@^4.0.0, ansi-styles@^4.1.0:
   integrity sha512-KLy/ugo33KZA7nugtQ7O0E1c8kQ52N3IvD/XgIh4w/Nr28ypfkwDfA67F1ev4N1m5D+BOk1+b2dEJDfpj/VvZg==
   dependencies:
     sylvester ">= 0.0.8"
-
-ar-gql@^0.0.3:
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/ar-gql/-/ar-gql-0.0.3.tgz#3c0734e572a26842ffbdb6bb343182f96e2a711f"
-  integrity sha512-P9xdIVU6InndVBO9n6nbKpu1A1Ad/6Yr02Lf835zZiEq4t60zMkp6epb88gr+YnXbDYdKuCrXTJWMHpHK7ZNTw==
-  dependencies:
-    node-fetch "^2.6.1"
 
 ardb@^1.0.2:
   version "1.0.2"
@@ -439,11 +425,6 @@ next-tick@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
   integrity sha1-yobR/ogoFpsBICCOPchCS524NCw=
-
-node-fetch@^2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
-  integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
 onetime@^5.1.0:
   version "5.1.2"

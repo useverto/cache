@@ -11,11 +11,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/mileusna/crontab"
 )
 
 func main() {
-	syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
-	syncCommunitiesCmd.Start()
+	// cache communities and add cronjob to do it every 10 minutes
+	cacheCommunities()
 
 	// get all communities
 	http.HandleFunc("/communities", func(w http.ResponseWriter, r *http.Request) {
@@ -140,4 +142,15 @@ func getIDs() (ids []string, err error) {
 	})
 
 	return ids, nil
+}
+
+func cacheCommunities() {
+	job := func() {
+		syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
+		syncCommunitiesCmd.Start()
+	}
+	ctab := crontab.New()
+
+	job()
+	ctab.MustAddJob("*/10 * * * *", job)
 }

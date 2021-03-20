@@ -21,12 +21,10 @@ export const fetchCache = async (contract: string) => {
 
   const latestInteraction = res[0]?.node.id ?? "";
 
-  let content: any | undefined;
   let cache: any | undefined;
   try {
     const res = fs.readFileSync(`./cache/${contract}.json`).toString();
-    content = JSON.parse(res);
-    cache = content[contract];
+    cache = JSON.parse(res);
   } catch {}
 
   if (cache && cache.interaction === latestInteraction) {

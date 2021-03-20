@@ -65,10 +65,10 @@ ansi-styles@^4.0.0, ansi-styles@^4.1.0:
   dependencies:
     sylvester ">= 0.0.8"
 
-ardb@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/ardb/-/ardb-1.0.2.tgz#cb6c11a7705a2955063c9635105499675df889fc"
-  integrity sha512-kg0IoM1VFR8bj3moY8oMsgTFHL61ven72Knkv6/gVNJGtuGBzWHJNr1Wgeb1tqURrNi4jztBd0dhXKgBJo+g2w==
+ardb@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/ardb/-/ardb-1.0.4.tgz#13c2e63b568641bbfae06221b1928d3c0a1246bd"
+  integrity sha512-GFjow1MskQ92baMZKuwZ4PVNDB4LFK5ZbSdmA+pq34TORlY3Kr9/nEmpiwmtMlObZUqzbhL4BVhVlCKg0bBLiA==
   dependencies:
     arweave "^1.10.11"
 

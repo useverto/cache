@@ -46,6 +46,13 @@ func main() {
 	// get a contract
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		addCors(&w)
+		if matched, _ := regexp.MatchString("(?i)/balance/[a-z0-9_-]{43}", r.URL.String()); matched {
+			address := strings.Split(r.URL.String(), "/")[2]
+			balances, _ := fetchBalances(address)
+
+			json.NewEncoder(w).Encode(balances)
+			return
+		}
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
 			contractID := strings.Replace(r.URL.String(), "/", "", 1)
 
@@ -153,4 +160,21 @@ func cacheCommunities() {
 
 	job()
 	ctab.MustAddJob("*/10 * * * *", job)
+}
+
+func fetchBalances(address string) (balances []int, err error) {
+	communities, _ := getIDs()
+	var res []int
+
+	for _, id := range communities {
+		cache, _ := fetchContract(id)
+		state := cache.(map[string]interface{})["state"]
+		stateBalances := state.(map[string]interface{})["balances"]
+
+		fmt.Println(stateBalances)
+
+		res = append(res, 0)
+	}
+
+	return res, nil
 }

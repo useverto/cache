@@ -11,21 +11,32 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/mileusna/crontab"
 )
 
 func main() {
-	// cache communities and add cronjob to do it every 10 minutes
-	cacheCommunities()
+	// start up main javascript script
+	cmd := exec.Command("node", "dist/index.js")
+	cmd.Start()
 
-	// get all communities
+	// get all contracts
 	http.HandleFunc("/communities", func(w http.ResponseWriter, r *http.Request) {
 		addCors(&w)
-		communities, err := fetchCommunities()
+		contracts, err := fetchAll()
 
 		if err == nil {
-			json.NewEncoder(w).Encode(communities)
+			json.NewEncoder(w).Encode(contracts)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+			fmt.Fprint(w, "No cache found")
+		}
+	})
+	// get all contracts
+	http.HandleFunc("/all", func(w http.ResponseWriter, r *http.Request) {
+		addCors(&w)
+		contracts, err := fetchAll()
+
+		if err == nil {
+			json.NewEncoder(w).Encode(contracts)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 			fmt.Fprint(w, "No cache found")
@@ -55,11 +66,6 @@ func main() {
 		}
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
 			contractID := strings.Replace(r.URL.String(), "/", "", 1)
-
-			syncContractCmd := exec.Command("node", "dist/contract.js")
-			syncContractCmd.Env = append(os.Environ(), "CONTRACT_ID="+contractID)
-			syncContractCmd.Run()
-
 			contract, err := fetchContract(contractID)
 
 			if err != nil {
@@ -86,21 +92,11 @@ func addCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
 
-func fetchCommunities() (res []interface{}, err error) {
-	communitiesCache, err := os.Open("./cache/communities.json")
-	var communityIDs []string
+func fetchAll() (res []interface{}, err error) {
+	ids, _ := getIDs()
 	var communities []interface{}
 
-	if err != nil {
-		return nil, errors.New("Could not read communities cache")
-	}
-
-	defer communitiesCache.Close()
-	byteValue, _ := ioutil.ReadAll(communitiesCache)
-
-	json.Unmarshal([]byte(byteValue), &communityIDs)
-
-	for _, id := range communityIDs {
+	for _, id := range ids {
 		contractCache, err := fetchContract(id)
 		if err == nil {
 			result := make(map[string]interface{})
@@ -149,17 +145,6 @@ func getIDs() (ids []string, err error) {
 	})
 
 	return ids, nil
-}
-
-func cacheCommunities() {
-	job := func() {
-		syncCommunitiesCmd := exec.Command("node", "dist/communities.js")
-		syncCommunitiesCmd.Start()
-	}
-	ctab := crontab.New()
-
-	job()
-	ctab.MustAddJob("*/10 * * * *", job)
 }
 
 func fetchBalances(address string) (balances []interface{}, err error) {

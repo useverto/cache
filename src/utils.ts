@@ -11,7 +11,7 @@ const client = new Arweave({
 
 const gql = new ArDB(client);
 
-export const fetchCache = async (contract: string) => {
+export const fetchContract = async (contract: string): Promise<any> => {
   const res: any = await gql
     .search()
     .max((await client.network.getInfo()).height)
@@ -44,65 +44,30 @@ export const fetchCache = async (contract: string) => {
   }
 };
 
-export const cacheCommunities = async () => {
+export const getCommunities = async (): Promise<string[]> => {
   const res: any = await gql
     .search()
     .appName("SmartWeaveContract")
     .tag("Contract-Src", "ngMml4jmlxu0umpiQCsHgPX2pb_Yz6YDB8f7G6j-tpI")
     .findAll();
 
-  res.push({
-    node: { id: "aBNO5VfXGrgV57XYvmCodwPdo71Wny5F3LZtxFJQV_Q", tags: [] },
-  });
-
-  const communities = [];
-
-  for (const edge of res) {
-    // Filter out the "1111" PSCs for now.
-    const rawState = edge.node.tags.find(
-      (tag: any) => tag.name === "Init-State"
-    )?.value;
-    if (rawState) {
-      const state = JSON.parse(rawState);
-      if (state.ticker && state.ticker.startsWith("1111-")) {
-        continue;
-      }
-    }
-
-    const id = edge.node.id;
-    await fetchCache(id);
-
-    communities.push(id);
-  }
-
-  fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
+  return res.map((edge: any) => edge.node.id);
 };
 
-export const fetchCommunities = async () => {
-  const main = async () => {
-    const communities = JSON.parse(
-      fs.readFileSync("./cache/communities.json").toString()
-    );
+export const getTokens = async (): Promise<string[]> => {
+  const res: any = await gql.search().tag("Cache", "List").findAll();
 
-    const res = [];
-    for (const id of communities) {
-      const cache = JSON.parse(
-        fs.readFileSync(`./cache/${id}.json`).toString()
-      );
+  const tokens: string[] = [];
+  for (const edge of res) {
+    const tags = edge.node.tags;
+    const token = tags.find((tag: any) => tag.name === "Token")?.value;
 
-      res.push({
-        id,
-        ...cache.res,
-      });
-    }
-
-    return res;
-  };
-
-  try {
-    return await main();
-  } catch {
-    await cacheCommunities();
-    return await main();
+    if (token && /[a-z0-9_-]{43}/i.test(token)) tokens.push(token);
   }
+
+  return tokens;
+};
+
+export const getTime = (): number => {
+  return parseFloat(new Date().getTime().toString().slice(0, -3));
 };

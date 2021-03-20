@@ -162,18 +162,24 @@ func cacheCommunities() {
 	ctab.MustAddJob("*/10 * * * *", job)
 }
 
-func fetchBalances(address string) (balances []int, err error) {
+func fetchBalances(address string) (balances []interface{}, err error) {
 	communities, _ := getIDs()
-	var res []int
+	var res []interface{}
 
 	for _, id := range communities {
 		cache, _ := fetchContract(id)
-		state := cache.(map[string]interface{})["state"]
-		stateBalances := state.(map[string]interface{})["balances"]
+		state := cache.(map[string]interface{})["state"].(map[string]interface{})
+		stateBalances := state["balances"].(map[string]interface{})
 
-		fmt.Println(stateBalances)
+		if stateBalances[address] != nil {
+			item := make(map[string]interface{})
 
-		res = append(res, 0)
+			item["id"] = id
+			item["ticker"] = state["ticker"]
+			item["balance"] = stateBalances[address]
+
+			res = append(res, item)
+		}
 	}
 
 	return res, nil

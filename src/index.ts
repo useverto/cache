@@ -21,7 +21,7 @@ import fs from "fs";
     prog.update(i);
 
     const id = all[i];
-    // await fetchContract(id);
+    await fetchContract(id);
     groupOne.push(id);
   }
   prog.stop();
@@ -57,12 +57,6 @@ import fs from "fs";
     );
 
     const current = getTime();
-
-    console.log(
-      current - updateOne,
-      current - updateTwo,
-      current - updateThree
-    );
 
     // 3 minutes
     if (current - updateOne >= 180) {

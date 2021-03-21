@@ -64,6 +64,17 @@ func main() {
 			json.NewEncoder(w).Encode(balances)
 			return
 		}
+		if matched, _ := regexp.MatchString("(?i)/fetch/[a-z0-9_-]{43}", r.URL.String()); matched {
+			contract := strings.Split(r.URL.String(), "/")[2]
+
+			contractCmd := exec.Command("node", "dist/contract.js")
+			contractCmd.Env = append(os.Environ(), "CONTRACT_ID="+contract)
+			contractCmd.Run()
+
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, "Fetched!")
+			return
+		}
 		if matched, _ := regexp.MatchString("(?i)/[a-z0-9_-]{43}", r.URL.String()); matched {
 			contractID := strings.Replace(r.URL.String(), "/", "", 1)
 			contract, err := fetchContract(contractID)
@@ -153,15 +164,22 @@ func fetchBalances(address string) (balances []interface{}, err error) {
 
 	for _, id := range communities {
 		cache, _ := fetchContract(id)
+
 		state := cache.(map[string]interface{})["state"].(map[string]interface{})
 		stateBalances := state["balances"].(map[string]interface{})
+		balancesMap := make(map[string]int)
+		for k, v := range stateBalances {
+			balancesMap[k] = int(v.(float64))
+		}
 
-		if stateBalances[address] != nil {
+		if balancesMap[address] != 0 {
 			item := make(map[string]interface{})
 
 			item["id"] = id
 			item["ticker"] = state["ticker"]
-			item["balance"] = stateBalances[address]
+			item["name"] = state["name"]
+			item["balance"] = balancesMap[address]
+			item["state"] = state
 
 			res = append(res, item)
 		}

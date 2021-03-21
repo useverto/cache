@@ -169,9 +169,13 @@ func fetchBalances(address string) (balances []int, err error) {
 	for _, id := range communities {
 		cache, _ := fetchContract(id)
 		state := cache.(map[string]interface{})["state"]
-		stateBalances := state.(map[string]interface{})["balances"]
+		stateBalances := state.(map[string]interface{})["balances"].(map[string]interface{})
+		balancesMap := make(map[string]int)
+		for k, v := range stateBalances {
+			balancesMap[k] = int(v.(float64))
+		}
 
-		fmt.Println(stateBalances)
+		fmt.Println(balancesMap)
 
 		res = append(res, 0)
 	}

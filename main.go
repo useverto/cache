@@ -167,18 +167,14 @@ func fetchBalances(address string) (balances []interface{}, err error) {
 
 		state := cache.(map[string]interface{})["state"].(map[string]interface{})
 		stateBalances := state["balances"].(map[string]interface{})
-		balancesMap := make(map[string]int)
-		for k, v := range stateBalances {
-			balancesMap[k] = int(v.(float64))
-		}
 
-		if balancesMap[address] != 0 {
+		if stateBalances[address] != nil {
 			item := make(map[string]interface{})
 
 			item["id"] = id
 			item["ticker"] = state["ticker"]
 			item["name"] = state["name"]
-			item["balance"] = balancesMap[address]
+			item["balance"] = stateBalances[address]
 			item["state"] = state
 
 			res = append(res, item)

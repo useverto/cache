@@ -51,6 +51,10 @@ export const cacheCommunities = async () => {
     .tag("Contract-Src", "ngMml4jmlxu0umpiQCsHgPX2pb_Yz6YDB8f7G6j-tpI")
     .findAll();
 
+  res.push({
+    node: { id: "aBNO5VfXGrgV57XYvmCodwPdo71Wny5F3LZtxFJQV_Q", tags: [] },
+  });
+
   const communities = [];
 
   for (const edge of res) {
@@ -69,8 +73,9 @@ export const cacheCommunities = async () => {
     await fetchCache(id);
 
     communities.push(id);
-    fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
   }
+
+  fs.writeFileSync("./cache/communities.json", JSON.stringify(communities));
 };
 
 export const fetchCommunities = async () => {

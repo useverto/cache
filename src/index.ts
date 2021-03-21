@@ -1,19 +1,35 @@
 import { getCommunities, getTokens, fetchContract, getTime } from "./utils";
+import cliProgress from "cli-progress";
 import fs from "fs";
 
 (async () => {
-  const groupOne: string[] = [],
+  let groupOne: string[] = [],
     groupTwo: string[] = [],
     groupThree: string[] = [];
   let updateOne: number, updateTwo: number, updateThree: number;
 
   // On first load, cache everything
   const all = [...(await getCommunities()), ...(await getTokens())];
-  for (const id of all) {
-    await fetchContract(id);
+
+  const prog = new cliProgress.SingleBar(
+    {},
+    cliProgress.Presets.shades_classic
+  );
+  prog.start(all.length, 0);
+
+  for (let i = 0; i < all.length; i++) {
+    prog.update(i);
+
+    const id = all[i];
+    // await fetchContract(id);
     groupOne.push(id);
   }
-  updateOne = getTime();
+  prog.stop();
+
+  const current = getTime();
+  updateOne = current;
+  updateTwo = current;
+  updateThree = current;
 
   // Every 10 minutes, fetch any new communities
   setInterval(async () => {
@@ -26,7 +42,7 @@ import fs from "fs";
   }, 600000);
 
   // Update groups
-  setInterval(async () => {
+  const main = async () => {
     const all = fs
       .readdirSync("./cache")
       .map((file) => file.split("./cache")[0].split(".json")[0]);
@@ -42,14 +58,64 @@ import fs from "fs";
 
     const current = getTime();
 
+    console.log(
+      current - updateOne,
+      current - updateTwo,
+      current - updateThree
+    );
+
     // 3 minutes
-    if (current - updateOne === 180) {
+    if (current - updateOne >= 180) {
+      let i = groupOne.length;
+      while (i--) {
+        const id = groupOne[i];
+        const res = await fetchContract(id);
+
+        if (!res) {
+          groupOne.splice(i, 1);
+          groupTwo.push(id);
+        }
+      }
+      updateOne = getTime();
     }
     // 9 minutes
-    if (current - updateTwo === 540) {
+    if (current - updateTwo >= 540) {
+      let i = groupTwo.length;
+      while (i--) {
+        const id = groupTwo[i];
+        const res = await fetchContract(id);
+
+        groupTwo.splice(i, 1);
+        if (!res) {
+          groupThree.push(id);
+        } else {
+          groupOne.push(id);
+        }
+      }
+      updateTwo = getTime();
     }
     // 21 minutes
-    if (current - updateTwo === 1260) {
+    if (current - updateThree >= 1260) {
+      let i = groupThree.length;
+      while (i--) {
+        const id = groupThree[i];
+        const res = await fetchContract(id);
+
+        if (res) {
+          groupThree.splice(i, 1);
+          groupTwo.push(id);
+        }
+      }
+      updateThree = getTime();
     }
-  }, 180000);
+
+    console.log(`\n==========\n`);
+    console.log("Group One  size :", groupOne.length);
+    console.log("Group Two  size :", groupTwo.length);
+    console.log("Group Thre Size :", groupThree.length);
+    console.log(`\n==========\n`);
+
+    setTimeout(main, 180000);
+  };
+  await main();
 })();

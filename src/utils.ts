@@ -11,7 +11,7 @@ const client = new Arweave({
 
 const gql = new ArDB(client);
 
-export const fetchContract = async (contract: string): Promise<any> => {
+export const fetchContract = async (contract: string): Promise<boolean> => {
   const res: any = await gql
     .search()
     .max((await client.network.getInfo()).height)
@@ -28,7 +28,7 @@ export const fetchContract = async (contract: string): Promise<any> => {
   } catch {}
 
   if (cache && cache.interaction === latestInteraction) {
-    return cache.res;
+    return false;
   } else {
     const res = await readContract(client, contract, undefined, true);
 
@@ -40,7 +40,7 @@ export const fetchContract = async (contract: string): Promise<any> => {
       JSON.stringify({ interaction: latestInteraction, res })
     );
 
-    return res;
+    return true;
   }
 };
 

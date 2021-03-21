@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	// start up main javascript script
+	// start up main script
 	cmd := exec.Command("node", "dist/index.js")
 	cmd.Start()
 

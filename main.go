@@ -164,20 +164,22 @@ func fetchBalances(address string) (balances []interface{}, err error) {
 
 	for _, id := range communities {
 		cache, _ := fetchContract(id)
-
 		state := cache.(map[string]interface{})["state"].(map[string]interface{})
-		stateBalances := state["balances"].(map[string]interface{})
 
-		if stateBalances[address] != nil {
-			item := make(map[string]interface{})
+		if state["balances"] != nil {
+			stateBalances := state["balances"].(map[string]interface{})
 
-			item["id"] = id
-			item["ticker"] = state["ticker"]
-			item["name"] = state["name"]
-			item["balance"] = stateBalances[address]
-			item["state"] = state
+			if stateBalances[address] != nil {
+				item := make(map[string]interface{})
 
-			res = append(res, item)
+				item["id"] = id
+				item["ticker"] = state["ticker"]
+				item["name"] = state["name"]
+				item["balance"] = stateBalances[address]
+				item["state"] = state
+
+				res = append(res, item)
+			}
 		}
 	}
 

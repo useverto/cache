@@ -1,115 +1,51 @@
-import { getCommunities, getTokens, fetchContract, getTime } from "./utils";
-import cliProgress from "cli-progress";
-import fs from "fs";
+import {
+  fetchCommunities,
+  fetchContract,
+  fetchIDs,
+  fetchContracts,
+} from "./utils";
+import Koa from "koa";
+import cors from "@koa/cors";
+import Router from "@koa/router";
+import mongoose from "mongoose";
+
+const communities = async () => {
+  await fetchCommunities();
+  setTimeout(communities, 600000);
+};
+
+const cache = new Koa();
+cache.use(cors());
+const router = new Router();
 
 (async () => {
-  let groupOne: string[] = [],
-    groupTwo: string[] = [],
-    groupThree: string[] = [];
-  let updateOne: number, updateTwo: number, updateThree: number;
-
-  // On first load, cache everything
-  const all = [...(await getCommunities()), ...(await getTokens())];
-
-  const prog = new cliProgress.SingleBar(
-    {},
-    cliProgress.Presets.shades_classic
+  // Connect to database.
+  await mongoose.connect(
+    "mongodb+srv://admin:BhiEbaXXU8sTU1N6@cluster0.lln3i.mongodb.net/cache?retryWrites=true&w=majority",
+    { useNewUrlParser: true, useUnifiedTopology: true }
   );
-  prog.start(all.length, 0);
 
-  for (let i = 0; i < all.length; i++) {
-    prog.update(i);
+  // Setup listener to communites.
+  communities();
 
-    const id = all[i];
-    await fetchContract(id);
-    groupOne.push(id);
-  }
-  prog.stop();
+  // Setup endpoints.
+  router.get("/:input", async (ctx, next) => {
+    const input = ctx.params.input;
 
-  const current = getTime();
-  updateOne = current;
-  updateTwo = current;
-  updateThree = current;
-
-  // Every 10 minutes, fetch any new communities
-  setInterval(async () => {
-    const communities = await getCommunities();
-    for (const id of communities) {
-      if (!fs.existsSync(`./cache/${id}.json`)) {
-        await fetchContract(id);
-      }
-    }
-  }, 600000);
-
-  // Update groups
-  const main = async () => {
-    const all = fs
-      .readdirSync("./cache")
-      .map((file) => file.split("./cache")[0].split(".json")[0]);
-
-    groupOne.push(
-      ...all.filter(
-        (id) =>
-          !groupOne.find((elem) => elem === id) &&
-          !groupTwo.find((elem) => elem === id) &&
-          !groupThree.find((elem) => elem === id)
-      )
-    );
-
-    const current = getTime();
-
-    // 3 minutes
-    if (current - updateOne >= 180) {
-      let i = groupOne.length;
-      while (i--) {
-        const id = groupOne[i];
-        const res = await fetchContract(id);
-
-        if (!res) {
-          groupOne.splice(i, 1);
-          groupTwo.push(id);
-        }
-      }
-      updateOne = getTime();
-    }
-    // 9 minutes
-    if (current - updateTwo >= 540) {
-      let i = groupTwo.length;
-      while (i--) {
-        const id = groupTwo[i];
-        const res = await fetchContract(id);
-
-        groupTwo.splice(i, 1);
-        if (!res) {
-          groupThree.push(id);
-        } else {
-          groupOne.push(id);
-        }
-      }
-      updateTwo = getTime();
-    }
-    // 21 minutes
-    if (current - updateThree >= 1260) {
-      let i = groupThree.length;
-      while (i--) {
-        const id = groupThree[i];
-        const res = await fetchContract(id);
-
-        if (res) {
-          groupThree.splice(i, 1);
-          groupTwo.push(id);
-        }
-      }
-      updateThree = getTime();
+    if (/[a-z0-9_-]{43}/i.test(input)) {
+      ctx.body = await fetchContract(input);
+    } else if (input === "ids") {
+      ctx.body = await fetchIDs();
+    } else if (input === "all") {
+      ctx.body = await fetchContracts();
+    } else {
+      ctx.body = "Not Found";
     }
 
-    console.log(`\n==========\n`);
-    console.log("Group One  size :", groupOne.length);
-    console.log("Group Two  size :", groupTwo.length);
-    console.log("Group Thre Size :", groupThree.length);
-    console.log(`\n==========\n`);
+    await next();
+  });
 
-    setTimeout(main, 180000);
-  };
-  await main();
+  // Run the app.
+  cache.use(router.routes());
+  cache.listen(process.env.PORT || 8080);
 })();

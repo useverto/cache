@@ -4,5 +4,5 @@
     "outDir": "dist",
     "esModuleInterop": true
   },
-  "files": ["src/contract.ts", "src/index.ts"]
+  "files": ["src/index.ts"]
 }

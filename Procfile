@@ -1,1 +1,1 @@
-web: cache
+web: node dist/index.js

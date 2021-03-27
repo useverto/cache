@@ -1,8 +1,10 @@
 import {
   fetchCommunities,
+  updateBatches,
   fetchContract,
   fetchIDs,
   fetchContracts,
+  fetchStats,
 } from "./utils";
 import Koa from "koa";
 import cors from "@koa/cors";
@@ -12,6 +14,11 @@ import mongoose from "mongoose";
 const communities = async () => {
   await fetchCommunities();
   setTimeout(communities, 600000);
+};
+
+const main = async () => {
+  await updateBatches();
+  setTimeout(main, 180000);
 };
 
 const cache = new Koa();
@@ -28,6 +35,9 @@ const router = new Router();
   // Setup listener to communites.
   communities();
 
+  // Setup batch program.
+  main();
+
   // Setup endpoints.
   router.get("/:input", async (ctx, next) => {
     const input = ctx.params.input;
@@ -38,6 +48,8 @@ const router = new Router();
       ctx.body = await fetchIDs();
     } else if (input === "all") {
       ctx.body = await fetchContracts();
+    } else if (input === "stats") {
+      ctx.body = await fetchStats();
     } else {
       ctx.body = "Not Found";
     }

@@ -9,3 +9,12 @@ const contractSchema = new mongoose.Schema({
 });
 
 export const Contract = mongoose.model("contracts", contractSchema);
+
+const statsSchema = new mongoose.Schema({
+  _id: String,
+  one: Number,
+  two: Number,
+  three: Number,
+});
+
+export const Stats = mongoose.model("stats", statsSchema);

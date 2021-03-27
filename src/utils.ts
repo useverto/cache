@@ -1,7 +1,7 @@
 import Arweave from "arweave";
 import ArDB from "ardb";
 import cliProgress from "cli-progress";
-import { Contract } from "./models";
+import { Contract, Stats } from "./models";
 import { readContract } from "smartweave";
 
 const client = new Arweave({
@@ -41,6 +41,29 @@ export const fetchContract = async (id: string) => {
       state: res.state,
       validity: res.validity,
     };
+  }
+};
+
+export const updateContract = async (id: string) => {
+  const cache = await Contract.findById(id);
+  const cachedInteraction = cache.latestInteraction;
+  const latestInteraction = await fetchLatestInteraction(id);
+
+  if (cachedInteraction === latestInteraction) {
+    return false;
+  } else {
+    try {
+      const res = await readContract(client, id, undefined, true);
+
+      cache.latestInteraction = latestInteraction;
+      cache.state = res.state;
+      cache.validity = res.validity;
+      cache.save();
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
 
@@ -97,4 +120,96 @@ export const fetchCommunities = async () => {
   }
 
   prog.stop();
+};
+
+// Batch Utils
+
+export const fetchStats = async () => {
+  const res = await Stats.findById("__verto__");
+
+  if (res) {
+    return res;
+  } else {
+    const current = getTime();
+    const obj = {
+      one: current,
+      two: current,
+      three: current
+    };
+
+    new Stats({
+      _id: "__verto__",
+      ...obj
+    }).save();
+
+    return obj;
+  }
+};
+
+export const fetchBatch = async (batch: number) => {
+  const res = await Contract.find({ batch });
+  return res.map((elem: any) => elem._id);
+};
+
+export const getTime = () => {
+  return parseFloat(new Date().getTime().toString().slice(0, -3));
+};
+
+export const updateBatches = async () => {
+  const stats = await Stats.findById("__verto__");
+  const current = getTime();
+
+  if (current - stats.one >= 180) {
+    for (const id of await fetchBatch(1)) {
+      const res = await updateContract(id);
+      const contract = await Contract.findById(id);
+
+      if (res) {
+        // Contract was updated. Keep it in Batch 1.
+      } else {
+        contract.batch = 2;
+        contract.save();
+      }
+    }
+
+    const stats = await Stats.findById("__verto__");
+    stats.one = getTime();
+    stats.save();
+  }
+
+  if (current - stats.two >= 540) {
+    for (const id of await fetchBatch(2)) {
+      const res = await updateContract(id);
+      const contract = await Contract.findById(id);
+
+      if (res) {
+        contract.batch = 1;
+      } else {
+        contract.batch = 3;
+      }
+      contract.save();
+    }
+
+    const stats = await Stats.findById("__verto__");
+    stats.two = getTime();
+    stats.save();
+  }
+
+  if (current - stats.three >= 1260) {
+    for (const id of await fetchBatch(3)) {
+      const res = await updateContract(id);
+      const contract = await Contract.findById(id);
+
+      if (res) {
+        contract.batch = 2;
+        contract.save();
+      } else {
+        // Contract wasn't updated. Keep it in Batch 3.
+      }
+    }
+
+    const stats = await Stats.findById("__verto__");
+    stats.three = getTime();
+    stats.save();
+  }
 };

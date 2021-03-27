@@ -80,28 +80,27 @@ const fetchLatestInteraction = async (id: string) => {
 };
 
 export const fetchBalances = async (addr: string) => {
-  const all = await Contract.find();
-  const balances = [];
+  const key = `state.balances.${addr}`;
+  const res = await Contract.find(
+    {
+      [key]: { $exists: true, $gt: 0 },
+    },
+    `_id state.name state.ticker ${key} state.settings`
+  );
 
-  for (const contract of all) {
-    const state = contract.state;
+  return res.map((elem: any) => {
+    const logoSetting = elem.state.settings?.find(
+      (entry: any) => entry[0] === "communityLogo"
+    );
 
-    if ("balances" in state) {
-      if (addr in state.balances) {
-        const balance = state.balances[addr];
-
-        if (balance !== 0) {
-          balances.push({
-            id: contract._id,
-            balance,
-            state,
-          });
-        }
-      }
-    }
-  }
-
-  return balances;
+    return {
+      id: elem._id,
+      balance: elem.state.balances[addr],
+      name: elem.state.name,
+      ticker: elem.state.ticker,
+      logo: logoSetting ? logoSetting[1] : undefined,
+    };
+  });
 };
 
 // CommunityXYZ Utils

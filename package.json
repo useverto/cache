@@ -20,6 +20,7 @@
     "@types/koa-json": "^2.0.18",
     "@types/koa__cors": "^3.0.2",
     "@types/koa__router": "^8.0.4",
+    "@types/mongoose": "^5.10.4",
     "prettier": "^2.2.1",
     "typescript": "^4.2.3"
   }

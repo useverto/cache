@@ -17,7 +17,7 @@ const prog = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 // Contract Utils
 
 export const fetchIDs = async () => {
-  const res = await Contract.find();
+  const res = await Contract.find({}, "_id");
   return res.map((elem: any) => elem._id);
 };
 
@@ -151,7 +151,7 @@ export const fetchCommunities = async () => {
 export const fetchStats = async () => {
   const res = await Stats.findById("__verto__");
 
-  const all = await Contract.find();
+  const all = await Contract.find({}, "batch");
   const batchOne = all.filter((elem: any) => elem.batch === 1).length;
   const batchTwo = all.filter((elem: any) => elem.batch === 2).length;
   const batchThree = all.filter((elem: any) => elem.batch === 3).length;

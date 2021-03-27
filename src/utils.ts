@@ -79,6 +79,31 @@ const fetchLatestInteraction = async (id: string) => {
   return latestInteraction;
 };
 
+export const fetchBalances = async (addr: string) => {
+  const all = await Contract.find();
+  const balances = [];
+
+  for (const contract of all) {
+    const state = contract.state;
+
+    if ("balances" in state) {
+      if (addr in state.balances) {
+        const balance = state.balances[addr];
+
+        if (balance !== 0) {
+          balances.push({
+            id: contract._id,
+            balance,
+            state,
+          });
+        }
+      }
+    }
+  }
+
+  return balances;
+};
+
 // CommunityXYZ Utils
 
 const fetchCommunityIDs = async () => {
@@ -127,22 +152,38 @@ export const fetchCommunities = async () => {
 export const fetchStats = async () => {
   const res = await Stats.findById("__verto__");
 
+  const all = await Contract.find();
+  const batchOne = all.filter((elem: any) => elem.batch === 1).length;
+  const batchTwo = all.filter((elem: any) => elem.batch === 2).length;
+  const batchThree = all.filter((elem: any) => elem.batch === 3).length;
+
   if (res) {
-    return res;
+    return {
+      oneSize: batchOne,
+      oneTimestamp: res.one,
+      twoSize: batchTwo,
+      twoTimestamp: res.two,
+      threeSize: batchThree,
+      threeTimestamp: res.three,
+    };
   } else {
     const current = getTime();
-    const obj = {
-      one: current,
-      two: current,
-      three: current
-    };
 
     new Stats({
       _id: "__verto__",
-      ...obj
+      one: current,
+      two: current,
+      three: current,
     }).save();
 
-    return obj;
+    return {
+      oneSize: batchOne,
+      oneTimestamp: current,
+      twoSize: batchTwo,
+      twoTimestamp: current,
+      threeSize: batchThree,
+      threeTimestamp: current,
+    };
   }
 };
 

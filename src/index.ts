@@ -11,6 +11,7 @@ import Koa from "koa";
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
+require("dotenv").config();
 
 const communities = async () => {
   await fetchCommunities();
@@ -29,7 +30,7 @@ const router = new Router();
 (async () => {
   // Connect to database.
   await mongoose.connect(
-    "mongodb+srv://admin:BhiEbaXXU8sTU1N6@cluster0.lln3i.mongodb.net/cache?retryWrites=true&w=majority",
+    `mongodb+srv://admin:${process.env.PASSWORD}@cluster0.lln3i.mongodb.net/cache?retryWrites=true&w=majority`,
     { useNewUrlParser: true, useUnifiedTopology: true }
   );
 

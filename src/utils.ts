@@ -67,6 +67,21 @@ export const updateContract = async (id: string) => {
   }
 };
 
+export const newContract = async (id: string) => {
+  try {
+    const res = await readContract(client, id, undefined, true);
+
+    const contract = new Contract({
+      _id: id,
+      latestInteraction: await fetchLatestInteraction(id),
+      state: res.state,
+      validity: res.validity,
+      batch: 1,
+    });
+    await contract.save();
+  } catch {}
+};
+
 const fetchLatestInteraction = async (id: string) => {
   const res: any = await gql
     .search()
@@ -125,20 +140,7 @@ export const fetchCommunities = async () => {
     const id = ids[i];
     const cache = await fetchContract(id);
 
-    if (!cache) {
-      try {
-        const res = await readContract(client, id, undefined, true);
-
-        const contract = new Contract({
-          _id: id,
-          latestInteraction: await fetchLatestInteraction(id),
-          state: res.state,
-          validity: res.validity,
-          batch: 1,
-        });
-        await contract.save();
-      } catch {}
-    }
+    if (!cache) await newContract(id);
 
     prog.update(i + 1);
   }

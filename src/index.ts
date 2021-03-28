@@ -6,6 +6,7 @@ import {
   fetchContracts,
   fetchStats,
   fetchBalances,
+  newContract,
 } from "./utils";
 import Koa from "koa";
 import cors from "@koa/cors";
@@ -63,6 +64,18 @@ const router = new Router();
 
     if (/[a-z0-9_-]{43}/i.test(addr)) {
       ctx.body = await fetchBalances(addr);
+    } else {
+      ctx.body = "Not Found";
+    }
+
+    await next();
+  });
+  router.get("/fetch/:id", async (ctx, next) => {
+    const id = ctx.params.id;
+
+    if (/[a-z0-9_-]{43}/i.test(id)) {
+      await newContract(id);
+      ctx.body = "Fetched!";
     } else {
       ctx.body = "Not Found";
     }

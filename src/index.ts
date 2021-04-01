@@ -14,6 +14,7 @@ import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
 import Order from "./models/order";
+import { Contract } from "./models";
 require("dotenv").config();
 
 const communities = async () => {
@@ -147,6 +148,28 @@ const router = new Router();
       ctx.body = "Not Found";
     }
 
+    await next();
+  });
+
+  router.get("/gecko/pairs", async (ctx, next) => {
+    const orders = await Order.find({}, "token");
+    const contracts = await Contract.find({}, "state.ticker");
+    const tokens = Array.from(new Set(orders.map((order: any) => order.token)));
+
+    const res = [];
+    for (const id of tokens) {
+      if (id !== "ETH") {
+        const contract = contracts.find((contract: any) => contract._id === id);
+
+        res.push({
+          ticker_id: id,
+          base: "AR",
+          target: contract.state.ticker,
+        });
+      }
+    }
+
+    ctx.body = res;
     await next();
   });
 

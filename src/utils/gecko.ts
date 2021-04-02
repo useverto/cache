@@ -21,3 +21,40 @@ export const getPairs = async () => {
 
   return res;
 };
+
+export const getHistorical = async (token: string, limit: number) => {
+  const res: {
+    trade_id: string;
+    price?: number;
+    base_volume: number;
+    target_volume: number;
+    trade_timestamp: number;
+    type: "buy" | "sell";
+  }[] = [];
+
+  const orders = await Order.find({ token, status: "success" }).limit(limit);
+  for (const order of orders) {
+    const type = order.inputUnit === "AR" ? "buy" : "sell";
+
+    let price;
+    if (type === "buy") {
+      price = order.input / order.output;
+    } else {
+      price = order.output / order.input;
+    }
+
+    res.push({
+      trade_id: order._id,
+      price,
+      base_volume: order.input,
+      target_volume: order.output,
+      trade_timestamp: order.timestamp,
+      type,
+    });
+  }
+
+  return {
+    buy: res.filter((trade) => trade.type === "buy"),
+    sell: res.filter((trade) => trade.type === "sell"),
+  };
+};

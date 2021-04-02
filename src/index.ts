@@ -155,11 +155,20 @@ const router = new Router();
     ctx.body = await getPairs();
     await next();
   });
-  router.get("/gecko/historical", async (ctx, next) => {
-    ctx.body = await getHistorical(
-      "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A",
-      10
-    );
+  router.get("/gecko/historical/:id", async (ctx, next) => {
+    const id = ctx.params.id;
+    const query = ctx.request.query;
+    const limit = query["limit"];
+
+    if (/[a-z0-9_-]{43}/i.test(id)) {
+      ctx.body = await getHistorical(
+        id,
+        limit ? parseFloat(limit.toString()) : 0
+      );
+    } else {
+      ctx.body = "Not Found";
+    }
+
     await next();
   });
 

@@ -32,7 +32,7 @@ export const getHistorical = async (token: string, limit: number) => {
     type: "buy" | "sell";
   }[] = [];
 
-  const orders = await Order.find({ token, status: "success" }).limit(limit);
+  const orders = await Order.find({ token, status: "success" });
   for (const order of orders) {
     const type = order.inputUnit === "AR" ? "buy" : "sell";
 
@@ -54,7 +54,11 @@ export const getHistorical = async (token: string, limit: number) => {
   }
 
   return {
-    buy: res.filter((trade) => trade.type === "buy"),
-    sell: res.filter((trade) => trade.type === "sell"),
+    buy: res
+      .filter((trade) => trade.type === "buy")
+      .slice(0, limit || undefined),
+    sell: res
+      .filter((trade) => trade.type === "sell")
+      .slice(0, limit || undefined),
   };
 };

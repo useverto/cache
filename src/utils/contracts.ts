@@ -88,27 +88,3 @@ const fetchLatestInteraction = async (id: string) => {
   const latestInteraction = res[0]?.node.id ?? "";
   return latestInteraction;
 };
-
-export const fetchBalances = async (addr: string) => {
-  const key = `state.balances.${addr}`;
-  const res = await Contract.find(
-    {
-      [key]: { $exists: true, $gt: 0 },
-    },
-    `_id state.name state.ticker ${key} state.settings`
-  );
-
-  return res.map((elem: any) => {
-    const logoSetting = elem.state.settings?.find(
-      (entry: any) => entry[0] === "communityLogo"
-    );
-
-    return {
-      id: elem._id,
-      balance: elem.state.balances[addr],
-      name: elem.state.name,
-      ticker: elem.state.ticker,
-      logo: logoSetting ? logoSetting[1] : undefined,
-    };
-  });
-};

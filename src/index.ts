@@ -10,12 +10,12 @@ import {
   fetchContract,
   fetchIDs,
   fetchContracts,
-  fetchBalances,
   newContract,
 } from "./utils/contracts";
 import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs } from "./utils/gecko";
+import { fetchBalances, fetchOrders } from "./utils/user";
 
 const communities = async () => {
   await fetchCommunities();
@@ -143,6 +143,25 @@ const router = new Router();
           output: `${order.output || "???"} ${order.outputUnit}`,
           timestamp: order.timestamp,
         };
+      }
+    } else {
+      ctx.body = "Not Found";
+    }
+
+    await next();
+  });
+
+  router.get("/user/:address/:input", async (ctx, next) => {
+    const address = ctx.params.address;
+    const input = ctx.params.input;
+
+    if (/[a-z0-9_-]{43}/i.test(address)) {
+      if (input === "balances") {
+        ctx.body = await fetchBalances(address);
+      } else if (input === "orders") {
+        ctx.body = await fetchOrders(address);
+      } else {
+        ctx.body = "Not Found";
       }
     } else {
       ctx.body = "Not Found";

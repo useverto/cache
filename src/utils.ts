@@ -1,7 +1,8 @@
 import Arweave from "arweave";
 import ArDB from "ardb";
 import cliProgress from "cli-progress";
-import { Contract, Stats } from "./models";
+import Contract from "./models/contract";
+import { ContractStats } from "./models/stats";
 import { readContract } from "smartweave";
 
 const client = new Arweave({
@@ -151,7 +152,7 @@ export const fetchCommunities = async () => {
 // Batch Utils
 
 export const fetchStats = async () => {
-  const res = await Stats.findById("__verto__");
+  const res = await ContractStats.findById("__verto__");
 
   const all = await Contract.find({}, "batch");
   const batchOne = all.filter((elem: any) => elem.batch === 1).length;
@@ -170,7 +171,7 @@ export const fetchStats = async () => {
   } else {
     const current = getTime();
 
-    new Stats({
+    new ContractStats({
       _id: "__verto__",
       one: current,
       two: current,
@@ -198,7 +199,7 @@ export const getTime = () => {
 };
 
 export const updateBatches = async () => {
-  const stats = await Stats.findById("__verto__");
+  const stats = await ContractStats.findById("__verto__");
   const current = getTime();
 
   if (current - stats.one >= 180) {
@@ -214,7 +215,7 @@ export const updateBatches = async () => {
       }
     }
 
-    const stats = await Stats.findById("__verto__");
+    const stats = await ContractStats.findById("__verto__");
     stats.one = getTime();
     stats.save();
   }
@@ -232,7 +233,7 @@ export const updateBatches = async () => {
       contract.save();
     }
 
-    const stats = await Stats.findById("__verto__");
+    const stats = await ContractStats.findById("__verto__");
     stats.two = getTime();
     stats.save();
   }
@@ -250,7 +251,7 @@ export const updateBatches = async () => {
       }
     }
 
-    const stats = await Stats.findById("__verto__");
+    const stats = await ContractStats.findById("__verto__");
     stats.three = getTime();
     stats.save();
   }

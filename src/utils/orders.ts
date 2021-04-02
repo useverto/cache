@@ -3,7 +3,7 @@ import ArDB from "ardb";
 import { getTradingPosts } from "../utils/verto";
 import { OrderStats } from "../models/stats";
 import Order from "../models/order";
-import { Contract } from "../models";
+import Contract from "../models/contract";
 import { newContract } from "../utils";
 
 const client = new Arweave({

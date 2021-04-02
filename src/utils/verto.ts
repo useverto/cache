@@ -1,6 +1,6 @@
 import Arweave from "arweave";
 import ArDB from "ardb";
-import { Contract } from "../models";
+import Contract from "../models/contract";
 
 const client = new Arweave({
   host: "arweave.net",

@@ -14,7 +14,7 @@ import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
 import Order from "./models/order";
-import { Contract } from "./models";
+import Contract from "./models/contract";
 require("dotenv").config();
 
 const communities = async () => {

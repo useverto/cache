@@ -8,7 +8,6 @@
     "@koa/router": "^10.0.0",
     "ardb": "^1.0.4",
     "arweave": "^1.10.11",
-    "cli-progress": "^3.9.0",
     "dotenv": "^8.2.0",
     "koa": "^2.13.1",
     "koa-json": "^2.0.2",
@@ -16,7 +15,6 @@
     "smartweave": "^0.4.27"
   },
   "devDependencies": {
-    "@types/cli-progress": "^3.9.1",
     "@types/koa": "^2.13.1",
     "@types/koa-json": "^2.0.18",
     "@types/koa__cors": "^3.0.2",

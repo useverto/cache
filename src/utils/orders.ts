@@ -4,7 +4,7 @@ import { getTradingPosts } from "../utils/verto";
 import { OrderStats } from "../models/stats";
 import Order from "../models/order";
 import Contract from "../models/contract";
-import { newContract } from "../utils";
+import { newContract } from "./contracts";
 
 const client = new Arweave({
   host: "arweave.net",
@@ -23,6 +23,8 @@ export const updateOrders = async () => {
     // Do nothing and return.
     return;
   } else {
+    console.log(`\nFetching orders ...`);
+
     const posts = await getTradingPosts();
 
     // Parse the trades
@@ -114,6 +116,8 @@ export const updateOrders = async () => {
         }
       }
     }
+    // @ts-ignore
+    console.log(`\n... Fetched ${trades.length} new trades.`);
 
     // Parse the confirmations
     const confirmations = await gql
@@ -149,6 +153,8 @@ export const updateOrders = async () => {
         await order.save();
       }
     }
+    // @ts-ignore
+    console.log(`\n... Fetched ${confirmations.length} new confirmations.`);
 
     // Parse the cancels
     const cancels = await gql
@@ -170,6 +176,8 @@ export const updateOrders = async () => {
         await order.save();
       }
     }
+    // @ts-ignore
+    console.log(`\n... Fetched ${cancels.length} new cancels.`);
 
     // Parse the returns
     const returns = await gql
@@ -191,6 +199,8 @@ export const updateOrders = async () => {
         await order.save();
       }
     }
+    // @ts-ignore
+    console.log(`\n... Fetched ${returns.length} new returns.`);
 
     if (stats) {
       stats.height = latestHeight;

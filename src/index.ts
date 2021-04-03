@@ -14,7 +14,7 @@ import {
 } from "./utils/contracts";
 import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
-import { getHistorical, getPairs } from "./utils/gecko";
+import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
 
 const communities = async () => {
@@ -172,6 +172,10 @@ const router = new Router();
 
   router.get("/gecko/pairs", async (ctx, next) => {
     ctx.body = await getPairs();
+    await next();
+  });
+  router.get("/gecko/tickers", async (ctx, next) => {
+    ctx.body = await getTickers();
     await next();
   });
   router.get("/gecko/historical/:id", async (ctx, next) => {

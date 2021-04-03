@@ -16,6 +16,7 @@ import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
+import { getCommunities } from "./utils/site";
 
 const communities = async () => {
   await fetchCommunities();
@@ -192,6 +193,11 @@ const router = new Router();
       ctx.body = "Not Found";
     }
 
+    await next();
+  });
+
+  router.get("/site/communities", async (ctx, next) => {
+    ctx.body = await getCommunities();
     await next();
   });
 

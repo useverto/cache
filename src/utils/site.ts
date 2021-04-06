@@ -5,7 +5,6 @@ export const getCommunities = async () => {
     .project({
       "state.name": 1,
       "state.ticker": 1,
-      "state.settings": 1,
       count: {
         $size: {
           $ifNull: [
@@ -16,20 +15,25 @@ export const getCommunities = async () => {
           ],
         },
       },
+      settings: {
+        $ifNull: [
+          {
+            $arrayToObject: "$state.settings",
+          },
+          {},
+        ],
+      },
     })
+    .match({ "settings.communityLogo": { $ne: null } })
     .sort({ count: -1 })
     .limit(4);
 
   return res.map((elem: any) => {
-    const logoSetting = elem.state.settings?.find(
-      (entry: any) => entry[0] === "communityLogo"
-    );
-
     return {
       id: elem._id,
       name: elem.state.name,
       ticker: elem.state.ticker,
-      logo: logoSetting ? logoSetting[1] : undefined,
+      logo: elem.settings.communityLogo,
     };
   });
 };

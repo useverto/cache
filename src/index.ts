@@ -196,8 +196,15 @@ const router = new Router();
     await next();
   });
 
-  router.get("/site/communities", async (ctx, next) => {
-    ctx.body = await getCommunities();
+  router.get("/site/communities/:type", async (ctx, next) => {
+    const type = ctx.params.type;
+
+    if (type === "random" || type === "top") {
+      ctx.body = await getCommunities(type);
+    } else {
+      ctx.body = "Not Found";
+    }
+
     await next();
   });
 

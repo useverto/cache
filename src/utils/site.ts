@@ -1,7 +1,7 @@
 import Contract from "../models/contract";
 
-export const getCommunities = async () => {
-  const res = await Contract.aggregate()
+export const getCommunities = async (type: "random" | "top") => {
+  const query = Contract.aggregate()
     .project({
       "state.name": 1,
       "state.ticker": 1,
@@ -24,11 +24,22 @@ export const getCommunities = async () => {
         ],
       },
     })
-    .match({ "settings.communityLogo": { $ne: null } })
-    .sort({ count: -1 })
-    .limit(4);
+    .match({
+      "settings.communityLogo": {
+        $exists: true,
+        $ne: "",
+      },
+    });
 
-  return res.map((elem: any) => {
+  let res: any;
+  if (type === "random") {
+    res = await query.sample(4);
+  }
+  if (type === "top") {
+    res = await query.sort({ count: -1 }).limit(4);
+  }
+
+  return res!.map((elem: any) => {
     return {
       id: elem._id,
       name: elem.state.name,

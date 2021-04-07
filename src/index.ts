@@ -77,6 +77,7 @@ const router = new Router();
         .unwind({ path: "$contract" })
         .project({
           token: 1,
+          "contract.state.name": 1,
           "contract.state.ticker": 1,
         })
         .sort({ "contract.state.ticker": 1 });
@@ -84,6 +85,7 @@ const router = new Router();
       ctx.body = res.map((entry: any) => {
         return {
           id: entry.token,
+          name: entry.contract.state.name,
           ticker: entry.contract.state.ticker,
         };
       });

@@ -6,12 +6,7 @@ import Koa from "koa";
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
-import {
-  fetchContract,
-  fetchIDs,
-  fetchContracts,
-  newContract,
-} from "./utils/contracts";
+import { fetchContract, fetchContracts, newContract } from "./utils/contracts";
 import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
@@ -64,8 +59,34 @@ const router = new Router();
 
     if (/[a-z0-9_-]{43}/i.test(input)) {
       ctx.body = await fetchContract(input);
-    } else if (input === "ids") {
-      ctx.body = await fetchIDs();
+    } else if (input === "tokens") {
+      const res = await Order.aggregate()
+        .group({
+          _id: null,
+          token: { $addToSet: "$token" },
+        })
+        .unwind({
+          path: "$token",
+        })
+        .lookup({
+          from: "contracts",
+          localField: "token",
+          foreignField: "_id",
+          as: "contract",
+        })
+        .unwind({ path: "$contract" })
+        .project({
+          token: 1,
+          "contract.state.ticker": 1,
+        })
+        .sort({ "contract.state.ticker": 1 });
+
+      ctx.body = res.map((entry: any) => {
+        return {
+          id: entry.token,
+          ticker: entry.contract.state.ticker,
+        };
+      });
     } else if (input === "all") {
       ctx.body = await fetchContracts();
     } else if (input === "orders") {

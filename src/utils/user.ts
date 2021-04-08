@@ -38,6 +38,9 @@ export const fetchOrders = async (addr: string) => {
       input: `${order.input} ${order.inputUnit}`,
       output: `${order.output || "???"} ${order.outputUnit}`,
       timestamp: order.timestamp,
+      actions: order.actions.sort(
+        (a: any, b: any) => a.timestamp - b.timestamp
+      ),
     };
   });
 };

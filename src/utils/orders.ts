@@ -235,30 +235,39 @@ export const updateOrders = async () => {
         await order.save();
       }
     }
-    // @ts-ignore
+
     console.log(`\n... Fetched ${confirmations.length} new confirmations.`);
 
     // Parse the cancels
-    const cancels = await gql
+    const cancels = (await gql
       .search()
       .to(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "Cancel")
       .min(height)
       .max(latestHeight)
-      .findAll();
+      .findAll()) as GQLEdgeTransactionInterface[];
 
-    // @ts-ignore
     for (const { node } of cancels) {
-      const id = node.tags.find((tag: any) => tag.name === "Order").value;
+      const id = node.tags.find((tag) => tag.name === "Order")?.value!;
       const order = await Order.findById(id);
 
       if (order) {
         order.status = "cancelled";
+
+        order.actions = [
+          ...order.actions,
+          {
+            id: node.id,
+            description: `Cancel`,
+            timestamp: node.block.timestamp,
+          },
+        ];
+
         await order.save();
       }
     }
-    // @ts-ignore
+
     console.log(`\n... Fetched ${cancels.length} new cancels.`);
 
     // Parse the returns
@@ -283,6 +292,52 @@ export const updateOrders = async () => {
     }
     // @ts-ignore
     console.log(`\n... Fetched ${returns.length} new returns.`);
+
+    // Parse the refunds
+    const refunds = (await gql
+      .search()
+      .from(posts)
+      .tag("Exchange", "Verto")
+      .tag("Type", "Refund")
+      .min(height)
+      .max(latestHeight)
+      .findAll()) as GQLEdgeTransactionInterface[];
+
+    for (const { node } of refunds) {
+      const appName = node.tags.find((tag) => tag.name === "App-Name")?.value!;
+      let qty;
+      if (appName === "SmartWeaveAction") {
+        const input = JSON.parse(
+          node.tags.find((tag) => tag.name === "Input")?.value!
+        );
+        const token = node.tags.find((tag) => tag.name === "Contract")?.value!;
+        const ticker = await fetchTicker(token);
+
+        qty = `${input.qty} ${ticker}`;
+      } else {
+        qty = `${parseFloat(parseFloat(node.quantity.ar).toFixed(4))} AR`;
+      }
+
+      const id = node.tags.find((tag) => tag.name === "Order")?.value!;
+      const order = await Order.findById(id);
+
+      if (order) {
+        order.status = "refunded";
+
+        order.actions = [
+          ...order.actions,
+          {
+            id: node.id,
+            description: `Refund - ${qty}`,
+            timestamp: node.block.timestamp,
+          },
+        ];
+
+        await order.save();
+      }
+    }
+
+    console.log(`\n... Fetched ${refunds.length} new refunds.`);
 
     if (stats) {
       stats.height = latestHeight;

@@ -56,6 +56,7 @@ const router = new Router();
     const token = query["token"];
     const from = query["from"];
     const to = query["to"];
+    const target = query["post"];
 
     if (/[a-z0-9_-]{43}/i.test(input)) {
       ctx.body = await fetchContract(input);
@@ -103,6 +104,7 @@ const router = new Router();
 
         query = { ...query, timestamp };
       }
+      if (target) query = { ...query, target };
 
       const orders = await Order.find(query);
       const res = orders

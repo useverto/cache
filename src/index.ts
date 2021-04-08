@@ -116,6 +116,9 @@ const router = new Router();
             input: `${order.input} ${order.inputUnit}`,
             output: `${order.output || "???"} ${order.outputUnit}`,
             timestamp: order.timestamp,
+            actions: order.actions.sort(
+              (a: any, b: any) => a.timestamp - b.timestamp
+            ),
           };
         })
         .sort((a: any, b: any) => b.timestamp - a.timestamp);
@@ -166,6 +169,9 @@ const router = new Router();
           input: `${order.input} ${order.inputUnit}`,
           output: `${order.output || "???"} ${order.outputUnit}`,
           timestamp: order.timestamp,
+          actions: order.actions.sort(
+            (a: any, b: any) => a.timestamp - b.timestamp
+          ),
         };
       }
     } else {

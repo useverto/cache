@@ -5,6 +5,7 @@ import { OrderStats } from "../models/stats";
 import Order from "../models/order";
 import Contract from "../models/contract";
 import { newContract } from "./contracts";
+import { GQLEdgeTransactionInterface } from "ardb/lib/faces/gql";
 
 const client = new Arweave({
   host: "arweave.net",
@@ -56,6 +57,7 @@ export const updateOrders = async () => {
           outputUnit: ticker,
           status: "pending",
           timestamp: node.block.timestamp,
+          actions: [],
         }).save();
       }
       if (type === "Sell") {
@@ -75,6 +77,7 @@ export const updateOrders = async () => {
           outputUnit: "AR",
           status: "pending",
           timestamp: node.block.timestamp,
+          actions: [],
         }).save();
       }
       if (type === "Swap") {
@@ -99,6 +102,7 @@ export const updateOrders = async () => {
               outputUnit: token ? await fetchTicker(token) : "AR",
               status: "pending",
               timestamp: node.block.timestamp,
+              actions: [],
             }).save();
           }
         } else {
@@ -112,6 +116,7 @@ export const updateOrders = async () => {
             outputUnit: chain,
             status: "pending",
             timestamp: node.block.timestamp,
+            actions: [],
           }).save();
         }
       }
@@ -119,17 +124,85 @@ export const updateOrders = async () => {
     // @ts-ignore
     console.log(`\n... Fetched ${trades.length} new trades.`);
 
+    // Parse the PST transfers
+    const pstTransfers = (await gql
+      .search()
+      .from(posts)
+      .tag("Exchange", "Verto")
+      .tag("Type", "PST-Transfer")
+      .min(height)
+      .max(latestHeight)
+      .findAll()) as GQLEdgeTransactionInterface[];
+
+    for (const { node } of pstTransfers) {
+      const input = JSON.parse(
+        node.tags.find((tag) => tag.name === "Input")?.value!
+      );
+      const qty = input.qty;
+      const token = node.tags.find((tag) => tag.name === "Contract")?.value!;
+      const ticker = await fetchTicker(token);
+
+      const match = node.tags.find((tag) => tag.name === "Match");
+      const res = {
+        id: node.id,
+        description: `PST Transfer - ${qty} ${ticker}`,
+        match: match && match.value,
+        timestamp: node.block.timestamp,
+      };
+
+      const id = node.tags.find((tag) => tag.name === "Order")?.value!;
+      const order = await Order.findById(id);
+
+      if (order) {
+        order.actions = [...order.actions, res];
+        await order.save();
+      }
+    }
+
+    console.log(`\n... Fetched ${pstTransfers.length} new PST transfers.`);
+
+    // Parse the AR transfers
+    const arTransfers = (await gql
+      .search()
+      .from(posts)
+      .tag("Exchange", "Verto")
+      .tag("Type", "AR-Transfer")
+      .min(height)
+      .max(latestHeight)
+      .findAll()) as GQLEdgeTransactionInterface[];
+
+    for (const { node } of arTransfers) {
+      const qty = parseFloat(parseFloat(node.quantity.ar).toFixed(4));
+      const match = node.tags.find((tag) => tag.name === "Match");
+
+      const res = {
+        id: node.id,
+        description: `AR Transfer - ${qty} AR`,
+        match: match && match.value,
+        timestamp: node.block.timestamp,
+      };
+
+      const id = node.tags.find((tag) => tag.name === "Order")?.value!;
+      const order = await Order.findById(id);
+
+      if (order) {
+        order.actions = [...order.actions, res];
+        await order.save();
+      }
+    }
+
+    console.log(`\n... Fetched ${arTransfers.length} new AR transfers.`);
+
     // Parse the confirmations
-    const confirmations = await gql
+    const confirmations = (await gql
       .search()
       .from(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "Confirmation")
       .min(height)
       .max(latestHeight)
-      .findAll();
+      .findAll()) as GQLEdgeTransactionInterface[];
 
-    // @ts-ignore
     for (const { node } of confirmations) {
       const match = node.tags.find((tag: any) => tag.name === "Match");
       const swap = node.tags.find((tag: any) => tag.name === "Swap");
@@ -141,15 +214,24 @@ export const updateOrders = async () => {
       const order = await Order.findById(id);
 
       if (order) {
-        const recieved = node.tags
-          .find((tag: any) => tag.name === "Received")
-          .value.split(" ")[0];
+        const recieved = node.tags.find((tag) => tag.name === "Received")
+          ?.value!;
 
         order.status = "success";
         order.output =
           order.outputUnit === "AR" || order.outputUnit === "ETH"
-            ? recieved
-            : Math.floor(recieved);
+            ? recieved.split(" ")[0]
+            : Math.floor(parseFloat(recieved.split(" ")[0]));
+
+        order.actions = [
+          ...order.actions,
+          {
+            id: node.id,
+            description: `Confirmation - ${recieved}`,
+            timestamp: node.block.timestamp,
+          },
+        ];
+
         await order.save();
       }
     }

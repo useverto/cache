@@ -11,6 +11,7 @@ const orderSchema = new mongoose.Schema({
   outputUnit: String,
   status: String,
   timestamp: Number,
+  actions: Array,
 });
 
 const Order = mongoose.model("orders", orderSchema);

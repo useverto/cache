@@ -12,7 +12,7 @@ import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
 import { getCommunities } from "./utils/site";
-import { getOrders, getPrice } from "./utils/token";
+import { getHistory, getOrders, getPrice } from "./utils/token";
 
 const communities = async () => {
   await fetchCommunities();
@@ -94,20 +94,7 @@ const router = new Router();
     } else if (input === "all") {
       ctx.body = await fetchContracts();
     } else if (input === "orders") {
-      let query = {};
-      if (token) {
-        query = { ...query, token };
-      }
-      if (from || to) {
-        let timestamp = {};
-        if (from) timestamp = { ...timestamp, $gte: from };
-        if (to) timestamp = { ...timestamp, $lte: to };
-
-        query = { ...query, timestamp };
-      }
-      if (target) query = { ...query, target };
-
-      const orders = await Order.find(query);
+      const orders = await Order.find();
       const res = orders
         .map((order: any) => {
           return {
@@ -194,7 +181,7 @@ const router = new Router();
       } else if (input === "price") {
         ctx.body = await getPrice(id);
       } else if (input === "history") {
-        ctx.body = "TODO";
+        ctx.body = await getHistory(id);
       } else {
         ctx.body = "Not Found";
       }

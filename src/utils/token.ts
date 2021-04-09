@@ -1,4 +1,3 @@
-import moment from "moment";
 import Order from "../models/order";
 
 export const getOrders = async (id: string) => {
@@ -22,27 +21,38 @@ export const getOrders = async (id: string) => {
 };
 
 export const getPrice = async (id: string) => {
-  const res = await Order.find({
-    token: id,
-    status: "success",
-    inputUnit: "AR",
-  });
+  const res = await Order.aggregate()
+    .match({
+      token: id,
+      status: "success",
+      inputUnit: "AR",
+    })
+    .group({
+      _id: {
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: {
+            $toDate: {
+              $multiply: [1000, "$timestamp"],
+            },
+          },
+        },
+      },
+      orders: {
+        $push: {
+          input: "$input",
+          output: "$output",
+        },
+      },
+    })
+    .sort({ _id: -1 })
+    .limit(1);
 
-  if (res.length === 0) {
+  const orders = res[0].orders;
+
+  if (orders.length === 0) {
     return undefined;
   } else {
-    const high = moment(res[0].timestamp * 1000)
-      .add(1, "days")
-      .hours(0)
-      .minutes(0)
-      .seconds(0);
-    const low = high.clone().subtract(1, "days");
-
-    const orders = res.filter(
-      (order: any) =>
-        order.timestamp >= low.unix() && order.timestamp < high.unix()
-    );
-
     const rates = [];
     for (const order of orders) {
       rates.push(order.input / order.output);

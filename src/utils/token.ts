@@ -28,6 +28,13 @@ export const getPrice = async (id: string) => {
       status: "success",
       inputUnit: "AR",
     })
+    .lookup({
+      from: "contracts",
+      localField: "token",
+      foreignField: "_id",
+      as: "contract",
+    })
+    .unwind({ path: "$contract" })
     .group({
       _id: {
         $dateToString: {
@@ -43,23 +50,29 @@ export const getPrice = async (id: string) => {
         $push: {
           input: "$input",
           output: "$output",
+          name: "$contract.state.name",
+          ticker: "$outputUnit",
         },
       },
     })
     .sort({ _id: -1 })
     .limit(1);
 
-  const orders = res[0].orders;
-
-  if (orders.length === 0) {
+  if (res.length === 0) {
     return undefined;
   } else {
+    const orders = res[0].orders;
+
     const rates = [];
     for (const order of orders) {
       rates.push(order.input / order.output);
     }
 
-    return rates.reduce((a, b) => a + b, 0) / rates.length;
+    return {
+      price: rates.reduce((a, b) => a + b, 0) / rates.length,
+      name: orders[0].name,
+      ticker: orders[0].ticker,
+    };
   }
 };
 

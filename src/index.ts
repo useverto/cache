@@ -54,9 +54,6 @@ const router = new Router();
     const input = ctx.params.input;
 
     const query = ctx.request.query;
-    const token = query["token"];
-    const from = query["from"];
-    const to = query["to"];
     const target = query["post"];
 
     if (/[a-z0-9_-]{43}/i.test(input)) {
@@ -94,7 +91,10 @@ const router = new Router();
     } else if (input === "all") {
       ctx.body = await fetchContracts();
     } else if (input === "orders") {
-      const orders = await Order.find();
+      let query = {};
+      if (target) query = { ...query, target };
+
+      const orders = await Order.find(query);
       const res = orders
         .map((order: any) => {
           return {

@@ -1,5 +1,6 @@
 require("dotenv").config();
 import { fetchCommunities } from "./utils/communities";
+import { fetchPosts } from "./utils/posts";
 import { updateOrders } from "./utils/orders";
 import { updateBatches } from "./utils/batches";
 import Koa from "koa";
@@ -13,10 +14,16 @@ import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
 import { getCommunities } from "./utils/site";
 import { getHistory, getOrders, getPrice } from "./utils/token";
+import Post from "./models/post";
 
 const communities = async () => {
   await fetchCommunities();
   setTimeout(communities, 600000);
+};
+
+const posts = async () => {
+  await fetchPosts();
+  setTimeout(posts, 600000);
 };
 
 const orders = async () => {
@@ -42,6 +49,9 @@ const router = new Router();
 
   // Setup listener for communities.
   communities();
+
+  // Setup listener for posts.
+  posts();
 
   // Setup listener for orders.
   orders();
@@ -90,29 +100,6 @@ const router = new Router();
       });
     } else if (input === "all") {
       ctx.body = await fetchContracts();
-    } else if (input === "orders") {
-      let query = {};
-      if (target) query = { ...query, target };
-
-      const orders = await Order.find(query);
-      const res = orders
-        .map((order: any) => {
-          return {
-            id: order.id,
-            status: order.status,
-            sender: order.sender,
-            target: order.target,
-            token: order.token,
-            input: `${order.input} ${order.inputUnit}`,
-            output: `${order.output || "???"} ${order.outputUnit}`,
-            timestamp: order.timestamp,
-            actions: order.actions.sort(
-              (a: any, b: any) => a.timestamp - b.timestamp
-            ),
-          };
-        })
-        .sort((a: any, b: any) => b.timestamp - a.timestamp);
-      ctx.body = res;
     } else if (input === "stats") {
       ctx.body = await fetchStats();
     } else {
@@ -140,6 +127,75 @@ const router = new Router();
       ctx.body = "Fetched!";
     } else {
       ctx.body = "Not Found";
+    }
+
+    await next();
+  });
+  router.get("/posts/:input*", async (ctx, next) => {
+    let address;
+    let input;
+
+    const query = ctx.params.input;
+    if (query) {
+      address = query.split("/")[0];
+
+      try {
+        input = query.split("/")[1];
+      } catch {}
+    }
+
+    if (address) {
+      if (/[a-z0-9_-]{43}/i.test(address)) {
+        if (input) {
+          if (input === "orders") {
+            const orders = await Order.find({ target: address });
+
+            const res = orders
+              .map((order: any) => {
+                return {
+                  id: order.id,
+                  status: order.status,
+                  sender: order.sender,
+                  target: order.target,
+                  token: order.token,
+                  input: `${order.input} ${order.inputUnit}`,
+                  output: `${order.output || "???"} ${order.outputUnit}`,
+                  timestamp: order.timestamp,
+                  actions: order.actions.sort(
+                    (a: any, b: any) => a.timestamp - b.timestamp
+                  ),
+                };
+              })
+              .sort((a: any, b: any) => b.timestamp - a.timestamp);
+
+            ctx.body = res;
+          } else {
+            ctx.body = "Not Found";
+          }
+        } else {
+          // Return info for specific trading post.
+          const res = await Post.findById(address);
+
+          ctx.body = {
+            address: res._id,
+            balance: res.balance,
+            stake: res.stake,
+            endpoint: res.endpoint,
+          };
+        }
+      } else {
+        ctx.body = "Not Found";
+      }
+    } else {
+      // Return info on all trading posts.
+      const res = await Post.find({ stake: { $gt: 0 } });
+
+      ctx.body = res.map((entry: any) => ({
+        address: entry._id,
+        balance: entry.balance,
+        stake: entry.stake,
+        endpoint: entry.endpoint,
+      }));
     }
 
     await next();

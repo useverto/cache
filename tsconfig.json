@@ -2,7 +2,8 @@
   "compilerOptions": {
     "strict": true,
     "outDir": "dist",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "downlevelIteration": true
   },
   "files": ["src/index.ts"]
 }

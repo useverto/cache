@@ -191,6 +191,89 @@ const router = new Router();
               .sort((a: any, b: any) => b.timestamp - a.timestamp);
 
             ctx.body = res;
+          } else if (input === "stats") {
+            ctx.body = await Order.aggregate()
+              .group({
+                _id: {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: {
+                      $toDate: {
+                        $multiply: [1000, "$timestamp"],
+                      },
+                    },
+                  },
+                },
+                orders: {
+                  $push: {
+                    status: "$status",
+                  },
+                },
+              })
+              .sort({ _id: -1 })
+              .project({
+                pending: {
+                  $size: {
+                    $ifNull: [
+                      {
+                        $filter: {
+                          input: "$orders",
+                          as: "order",
+                          cond: { $eq: ["$$order.status", "pending"] },
+                        },
+                      },
+                      [],
+                    ],
+                  },
+                },
+                succeeded: {
+                  $size: {
+                    $ifNull: [
+                      {
+                        $filter: {
+                          input: "$orders",
+                          as: "order",
+                          cond: { $eq: ["$$order.status", "success"] },
+                        },
+                      },
+                      [],
+                    ],
+                  },
+                },
+                neutral: {
+                  $size: {
+                    $ifNull: [
+                      {
+                        $filter: {
+                          input: "$orders",
+                          as: "order",
+                          cond: { $eq: ["$$order.status", "cancelled"] },
+                        },
+                      },
+                      [],
+                    ],
+                  },
+                },
+                errored: {
+                  $size: {
+                    $ifNull: [
+                      {
+                        $filter: {
+                          input: "$orders",
+                          as: "order",
+                          cond: {
+                            $or: [
+                              { $eq: ["$$order.status", "refunded"] },
+                              { $eq: ["$$order.status", "returned"] },
+                            ],
+                          },
+                        },
+                      },
+                      [],
+                    ],
+                  },
+                },
+              });
           } else {
             ctx.body = "Not Found";
           }

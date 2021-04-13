@@ -193,6 +193,7 @@ const router = new Router();
             ctx.body = res;
           } else if (input === "stats") {
             const data = await Order.aggregate()
+              .match({ target: address })
               .group({
                 _id: {
                   $dateToString: {

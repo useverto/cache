@@ -163,7 +163,14 @@ const router = new Router();
               }
             }
 
-            const orders = await Order.find(query, undefined, { limit });
+            let orders = await Order.find(query, undefined, { limit });
+
+            if (after) {
+              const index = orders.findIndex(
+                (order: any) => order.id === after
+              );
+              orders = orders.slice(index + 1);
+            }
 
             const res = orders
               .map((order: any) => {

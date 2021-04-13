@@ -192,7 +192,7 @@ const router = new Router();
 
             ctx.body = res;
           } else if (input === "stats") {
-            ctx.body = await Order.aggregate()
+            const data = await Order.aggregate()
               .group({
                 _id: {
                   $dateToString: {
@@ -274,6 +274,18 @@ const router = new Router();
                   },
                 },
               });
+
+            let res: any = {};
+            for (const item of data) {
+              res[item._id] = {
+                pending: item.pending,
+                succeeded: item.succeeded,
+                neutral: item.neutral,
+                errored: item.errored,
+              };
+            }
+
+            ctx.body = res;
           } else {
             ctx.body = "Not Found";
           }

@@ -148,7 +148,22 @@ const router = new Router();
       if (/[a-z0-9_-]{43}/i.test(address)) {
         if (input) {
           if (input === "orders") {
-            const orders = await Order.find({ target: address });
+            const params = ctx.request.query;
+            const limit = parseFloat(params["limit"] as string);
+            const after = params["after"];
+
+            let query: any = { target: address };
+            if (after) {
+              const order = await Order.findById(after, "timestamp");
+              if (order) {
+                query = {
+                  ...query,
+                  timestamp: { $lte: order.timestamp },
+                };
+              }
+            }
+
+            const orders = await Order.find(query, undefined, { limit });
 
             const res = orders
               .map((order: any) => {

@@ -4,6 +4,7 @@ const postSchema = new mongoose.Schema({
   _id: String,
   balance: Number,
   stake: Number,
+  time: Number,
   endpoint: String,
 });
 

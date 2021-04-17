@@ -56,6 +56,24 @@ const getStake = async (
   return stake;
 };
 
+const getTime = async (
+  address: string,
+  vault: VaultInterface
+): Promise<number> => {
+  let time = 0;
+
+  if (address in vault) {
+    const height = (await client.network.getInfo()).height;
+    const filtered = vault[address].filter((a) => height < a.end);
+
+    for (const entry of filtered) {
+      time = Math.max(time, entry.end - entry.start);
+    }
+  }
+
+  return time;
+};
+
 const getEndpoint = async (address: string): Promise<string> => {
   const res = (await gql
     .search()
@@ -92,12 +110,14 @@ export const fetchPosts = async () => {
   for (const address of addresses) {
     const balance = await getBalance(address);
     const stake = await getStake(address, vault);
+    const time = await getTime(address, vault);
     const endpoint = await getEndpoint(address);
 
     const post = await Post.findById(address);
     if (post) {
       post.balance = balance;
       post.stake = stake;
+      post.time = time;
       post.endpoint = endpoint;
       await post.save();
     } else {
@@ -105,6 +125,7 @@ export const fetchPosts = async () => {
         _id: address,
         balance,
         stake,
+        time,
         endpoint,
       }).save();
     }

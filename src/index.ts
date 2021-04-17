@@ -292,13 +292,11 @@ const router = new Router();
           }
         } else {
           // Return info for specific trading post.
-          const res = await Post.findById(address);
+          const res = await Post.findById(address).lean();
 
           ctx.body = {
-            address: res._id,
-            balance: res.balance,
-            stake: res.stake,
-            endpoint: res.endpoint,
+            address,
+            ...res,
           };
         }
       } else {
@@ -312,6 +310,7 @@ const router = new Router();
         address: entry._id,
         balance: entry.balance,
         stake: entry.stake,
+        time: entry.time,
         endpoint: entry.endpoint,
       }));
     }

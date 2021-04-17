@@ -57,7 +57,13 @@ export const updateOrders = async () => {
           outputUnit: ticker,
           status: "pending",
           timestamp: node.block.timestamp,
-          actions: [],
+          actions: [
+            {
+              id: node.id,
+              description: `Order - ${amount} AR`,
+              timestamp: node.block.timestamp,
+            },
+          ],
         }).save();
       }
       if (type === "Sell") {
@@ -77,7 +83,13 @@ export const updateOrders = async () => {
           outputUnit: "AR",
           status: "pending",
           timestamp: node.block.timestamp,
-          actions: [],
+          actions: [
+            {
+              id: node.id,
+              description: `Order - ${amount} ${ticker}`,
+              timestamp: node.block.timestamp,
+            },
+          ],
         }).save();
       }
       if (type === "Swap") {
@@ -102,7 +114,13 @@ export const updateOrders = async () => {
               outputUnit: token ? await fetchTicker(token) : "AR",
               status: "pending",
               timestamp: node.block.timestamp,
-              actions: [],
+              actions: [
+                {
+                  id: node.id,
+                  description: `Order - ${parseFloat(value)} ${chain}`,
+                  timestamp: node.block.timestamp,
+                },
+              ],
             }).save();
           }
         } else {
@@ -116,7 +134,13 @@ export const updateOrders = async () => {
             outputUnit: chain,
             status: "pending",
             timestamp: node.block.timestamp,
-            actions: [],
+            actions: [
+              {
+                id: node.id,
+                description: `Order - ${parseFloat(node.quantity.ar)} AR`,
+                timestamp: node.block.timestamp,
+              },
+            ],
           }).save();
         }
       }

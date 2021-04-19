@@ -10,19 +10,21 @@ export const fetchBalances = async (addr: string) => {
     `_id state.name state.ticker ${key} state.settings`
   );
 
-  return res.map((elem: any) => {
-    const logoSetting = elem.state.settings?.find(
-      (entry: any) => entry[0] === "communityLogo"
-    );
+  return res
+    .map((elem: any) => {
+      const logoSetting = elem.state.settings?.find(
+        (entry: any) => entry[0] === "communityLogo"
+      );
 
-    return {
-      id: elem._id,
-      balance: elem.state.balances[addr],
-      name: elem.state.name,
-      ticker: elem.state.ticker,
-      logo: logoSetting ? logoSetting[1] : undefined,
-    };
-  });
+      return {
+        id: elem._id,
+        balance: elem.state.balances[addr],
+        name: elem.state.name,
+        ticker: elem.state.ticker,
+        logo: logoSetting ? logoSetting[1] : undefined,
+      };
+    })
+    .sort((a: any, b: any) => b.balance - a.balance);
 };
 
 export const fetchOrders = async (addr: string) => {

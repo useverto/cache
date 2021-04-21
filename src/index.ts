@@ -15,6 +15,7 @@ import { fetchBalances, fetchOrders } from "./utils/user";
 import { getCommunities } from "./utils/site";
 import { getHistory, getOrders, getPrice } from "./utils/token";
 import Post from "./models/post";
+import Contract from "./models/contract";
 
 const communities = async () => {
   await fetchCommunities();
@@ -368,7 +369,7 @@ const router = new Router();
     await next();
   });
 
-  router.get("/user/:address/:input", async (ctx, next) => {
+  router.get("/user/:address/:input*", async (ctx, next) => {
     const address = ctx.params.address;
     const input = ctx.params.input;
 
@@ -378,10 +379,42 @@ const router = new Router();
       } else if (input === "orders") {
         ctx.body = await fetchOrders(address);
       } else {
-        ctx.body = "Not Found";
+        const res = await Contract.aggregate()
+          .match({ _id: "sO9sZCm2bmRiaZYcMCoEt2nc9aVnrR9rSCBOgJntcCo" })
+          .unwind({ path: "$state.people" })
+          .project({
+            "state.people": 1,
+            hasAddress: {
+              $in: [address, "$state.people.addresses"],
+            },
+          })
+          .match({ hasAddress: true })
+          .limit(1);
+
+        if (res.length) {
+          ctx.body = res[0].state.people;
+        } else {
+          ctx.body = "Not Found";
+        }
       }
     } else {
-      ctx.body = "Not Found";
+      const res = await Contract.aggregate()
+        .match({ _id: "sO9sZCm2bmRiaZYcMCoEt2nc9aVnrR9rSCBOgJntcCo" })
+        .unwind({ path: "$state.people" })
+        .project({
+          "state.people": 1,
+          hasUsername: {
+            $eq: [address, "$state.people.username"],
+          },
+        })
+        .match({ hasUsername: true })
+        .limit(1);
+
+      if (res.length) {
+        ctx.body = res[0].state.people;
+      } else {
+        ctx.body = "Not Found";
+      }
     }
 
     await next();

@@ -450,8 +450,17 @@ const router = new Router();
       .match({ _id: "Z9cS3JWfTAjO44oLTBueyJKb0C9PxpH0XrblzA5O94Q" })
       .unwind({ path: "$state.tokens" })
       .match({ "state.tokens.type": "art" })
+      .sample(1)
+      .lookup({
+        from: "contracts",
+        localField: "state.tokens.id",
+        foreignField: "_id",
+        as: "contract",
+      })
+      .unwind({ path: "$contract" })
       .project({
         _id: "$state.tokens.id",
+        name: "$contract.state.name",
         owner: {
           $first: {
             $filter: {
@@ -464,10 +473,11 @@ const router = new Router();
           },
         },
       })
-      .sample(1);
+      .limit(1);
 
     ctx.body = {
       id: res[0]._id,
+      name: res[0].name,
       owner: res[0].owner,
     };
 

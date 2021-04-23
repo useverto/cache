@@ -445,6 +445,35 @@ const router = new Router();
     await next();
   });
 
+  router.get("/site/artwork", async (ctx, next) => {
+    const res: any = await Contract.aggregate()
+      .match({ _id: "Z9cS3JWfTAjO44oLTBueyJKb0C9PxpH0XrblzA5O94Q" })
+      .unwind({ path: "$state.tokens" })
+      .match({ "state.tokens.type": "art" })
+      .project({
+        _id: "$state.tokens.id",
+        owner: {
+          $first: {
+            $filter: {
+              input: "$state.people",
+              as: "person",
+              cond: {
+                $eq: ["$$person.username", "$state.tokens.owner"],
+              },
+            },
+          },
+        },
+      })
+      .sample(1);
+
+    ctx.body = {
+      id: res[0]._id,
+      owner: res[0].owner,
+    };
+
+    await next();
+  });
+
   router.get("/site/communities/:type", async (ctx, next) => {
     const type = ctx.params.type;
 

@@ -35,6 +35,39 @@ export const getPrice = async (id: string) => {
       as: "contract",
     })
     .unwind({ path: "$contract" })
+    .lookup({
+      from: "contracts",
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["Z9cS3JWfTAjO44oLTBueyJKb0C9PxpH0XrblzA5O94Q", "$_id"],
+            },
+          },
+        },
+      ],
+      as: "community",
+    })
+    .unwind({ path: "$community" })
+    .project({
+      input: 1,
+      output: 1,
+      outputUnit: 1,
+      timestamp: 1,
+
+      contract: 1,
+      community: {
+        $first: {
+          $filter: {
+            input: "$community.state.tokens",
+            as: "token",
+            cond: {
+              $eq: ["$$token.id", "$token"],
+            },
+          },
+        },
+      },
+    })
     .group({
       _id: {
         $dateToString: {
@@ -52,6 +85,7 @@ export const getPrice = async (id: string) => {
           output: "$output",
           name: "$contract.state.name",
           ticker: "$outputUnit",
+          type: "$community.type",
         },
       },
     })
@@ -72,6 +106,7 @@ export const getPrice = async (id: string) => {
       price: rates.reduce((a, b) => a + b, 0) / rates.length,
       name: orders[0].name,
       ticker: orders[0].ticker,
+      type: orders[0].type,
     };
   }
 };

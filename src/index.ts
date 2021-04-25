@@ -4,6 +4,7 @@ import { fetchPosts } from "./utils/posts";
 import { updateOrders } from "./utils/orders";
 import { updateBatches } from "./utils/batches";
 import Koa from "koa";
+import body from "koa-body";
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
@@ -16,6 +17,8 @@ import { getCommunities } from "./utils/site";
 import { getHistory, getOrders, getPrice } from "./utils/token";
 import Post from "./models/post";
 import Contract from "./models/contract";
+
+import { handleNotification } from "./utils/notifications";
 
 const communities = async () => {
   await fetchCommunities();
@@ -38,6 +41,7 @@ const main = async () => {
 };
 
 const cache = new Koa();
+cache.use(body());
 cache.use(cors());
 const router = new Router();
 
@@ -418,6 +422,17 @@ const router = new Router();
     }
 
     await next();
+  });
+
+  router.post("/notification", async (ctx, next) => {
+    const data = ctx.request.body;
+    await handleNotification(
+      data.action,
+      data.txID,
+      data.signature,
+      data.address
+    );
+    ctx.body = "Success";
   });
 
   router.get("/gecko/pairs", async (ctx, next) => {

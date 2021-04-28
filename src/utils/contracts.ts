@@ -27,8 +27,8 @@ export const fetchContracts = async () => {
   });
 };
 
-export const fetchContract = async (id: string) => {
-  const res = await Contract.findById(id);
+export const fetchContract = async (id: string, filter: string | undefined) => {
+  const res = await Contract.findById(id, filter);
   if (!res) {
     return res;
   } else {

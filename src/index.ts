@@ -69,10 +69,10 @@ const router = new Router();
     const input = ctx.params.input;
 
     const query = ctx.request.query;
-    const target = query["post"];
+    const filter = query["filter"];
 
     if (/[a-z0-9_-]{43}/i.test(input)) {
-      ctx.body = await fetchContract(input);
+      ctx.body = await fetchContract(input, filter && filter.toString());
     } else if (input === "tokens") {
       const res = await Order.aggregate()
         .group({

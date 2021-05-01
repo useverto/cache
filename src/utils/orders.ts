@@ -17,7 +17,7 @@ const gql = new ArDB(client);
 
 export const updateOrders = async () => {
   const stats = await OrderStats.findById("__verto__");
-  const height = stats ? stats.height : 0;
+  const height = stats ? stats.height : -1;
   const latestHeight = (await client.network.getInfo()).height;
 
   if (height === latestHeight) {
@@ -34,7 +34,7 @@ export const updateOrders = async () => {
       .to(posts)
       .tag("Exchange", "Verto")
       .tag("Type", ["Buy", "Sell", "Swap"])
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll();
 
@@ -154,7 +154,7 @@ export const updateOrders = async () => {
       .from(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "PST-Transfer")
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll()) as GQLEdgeTransactionInterface[];
 
@@ -191,7 +191,7 @@ export const updateOrders = async () => {
       .from(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "AR-Transfer")
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll()) as GQLEdgeTransactionInterface[];
 
@@ -223,7 +223,7 @@ export const updateOrders = async () => {
       .from(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "Confirmation")
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll()) as GQLEdgeTransactionInterface[];
 
@@ -268,7 +268,7 @@ export const updateOrders = async () => {
       .to(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "Cancel")
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll()) as GQLEdgeTransactionInterface[];
 
@@ -300,7 +300,7 @@ export const updateOrders = async () => {
       .from(posts)
       .tag("Exchange", "Verto")
       .tag("Type", ["Buy-Return", "Sell-Return", "Swap-Return"])
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll();
 
@@ -323,7 +323,7 @@ export const updateOrders = async () => {
       .from(posts)
       .tag("Exchange", "Verto")
       .tag("Type", "Refund")
-      .min(height)
+      .min(height + 1)
       .max(latestHeight)
       .findAll()) as GQLEdgeTransactionInterface[];
 

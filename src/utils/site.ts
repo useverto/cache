@@ -29,6 +29,10 @@ export const getCommunities = async (type: "random" | "top") => {
         $exists: true,
         $ne: "",
       },
+      "settings.communityDescription": {
+        $exists: true,
+        $ne: "",
+      },
     });
 
   let res: any;
@@ -45,6 +49,7 @@ export const getCommunities = async (type: "random" | "top") => {
       name: elem.state.name,
       ticker: elem.state.ticker,
       logo: elem.settings.communityLogo,
+      description: elem.settings.communityDescription,
     };
   });
 };

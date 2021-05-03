@@ -1,5 +1,6 @@
 import moment from "moment";
 import Order from "../models/order";
+import { fetchTicker } from "./orders";
 
 export const getOrders = async (id: string) => {
   const res = await Order.find({ token: id });
@@ -111,7 +112,7 @@ export const getPrice = async (id: string) => {
   }
 };
 
-export const getHistory = async (id: string) => {
+export const getPriceHistory = async (id: string) => {
   const res = await Order.aggregate()
     .match({
       token: id,
@@ -166,6 +167,102 @@ export const getHistory = async (id: string) => {
   }
 
   return fill(history);
+};
+
+export const getVolume = async (id: string) => {
+  const ticker = await fetchTicker(id);
+
+  const res = await Order.aggregate()
+    .match({
+      token: id,
+      inputUnit: ticker,
+    })
+    .group({
+      _id: {
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: {
+            $toDate: {
+              $multiply: [1000, "$timestamp"],
+            },
+          },
+        },
+      },
+      orders: {
+        $push: {
+          input: "$input",
+        },
+      },
+    })
+    .sort({ _id: -1 })
+    .limit(1);
+
+  if (res.length) {
+    const current = moment().add(1, "days").hours(0).minutes(0).seconds(0);
+
+    if (current.unix() === moment(res[0]._id).unix()) {
+      return res[0].orders
+        .map((order: any) => order.input)
+        .reduce((a: any, b: any) => a + b, 0);
+    }
+
+    return 0;
+  }
+
+  return 0;
+};
+
+export const getVolumeHistory = async (id: string) => {
+  const ticker = await fetchTicker(id);
+
+  const res = await Order.aggregate()
+    .match({
+      token: id,
+      inputUnit: ticker,
+    })
+    .group({
+      _id: {
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: {
+            $toDate: {
+              $multiply: [1000, "$timestamp"],
+            },
+          },
+        },
+      },
+      orders: {
+        $push: {
+          input: "$input",
+        },
+      },
+    })
+    .sort({ _id: -1 });
+
+  const history: { [date: string]: any } = {};
+
+  if (res.length) {
+    let current = moment().add(1, "days").hours(0).minutes(0).seconds(0);
+    const stop = moment(res[res.length - 1]._id);
+
+    while (current >= stop) {
+      let orders = [];
+      const entry = res.find(
+        (item: any) => current.unix() === moment(item._id).unix()
+      );
+
+      if (entry) {
+        orders = entry.orders;
+      }
+
+      history[current.format("MMM DD, YYYY")] = orders
+        .map((order: any) => order.input)
+        .reduce((a: any, b: any) => a + b, 0);
+      current = moment(current).subtract(1, "days");
+    }
+  }
+
+  return history;
 };
 
 const fill = (input: {

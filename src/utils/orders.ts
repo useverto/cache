@@ -375,7 +375,7 @@ export const updateOrders = async () => {
   }
 };
 
-const fetchTicker = async (id: string): Promise<string> => {
+export const fetchTicker = async (id: string): Promise<string> => {
   let contract = await Contract.findById(id, `state.ticker`);
   if (contract) {
     return contract.state.ticker;

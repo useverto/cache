@@ -14,7 +14,13 @@ import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
 import { getCommunities } from "./utils/site";
-import { getHistory, getOrders, getPrice } from "./utils/token";
+import {
+  getOrders,
+  getPrice,
+  getPriceHistory,
+  getVolume,
+  getVolumeHistory,
+} from "./utils/token";
 import Post from "./models/post";
 import Contract from "./models/contract";
 
@@ -361,8 +367,12 @@ const router = new Router();
         ctx.body = await getOrders(id);
       } else if (input === "price") {
         ctx.body = await getPrice(id);
-      } else if (input === "history") {
-        ctx.body = await getHistory(id);
+      } else if (input === "priceHistory") {
+        ctx.body = await getPriceHistory(id);
+      } else if (input === "volume") {
+        ctx.body = await getVolume(id);
+      } else if (input === "volumeHistory") {
+        ctx.body = await getVolumeHistory(id);
       } else {
         ctx.body = "Not Found";
       }

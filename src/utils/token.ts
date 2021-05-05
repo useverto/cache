@@ -42,7 +42,7 @@ export const getPrice = async (id: string) => {
         {
           $match: {
             $expr: {
-              $eq: ["Z9cS3JWfTAjO44oLTBueyJKb0C9PxpH0XrblzA5O94Q", "$_id"],
+              $eq: ["TZ4DWsg0-S3e2i6rkepP12mo22rxaJCbQEMLchn8j7s", "$_id"],
             },
           },
         },

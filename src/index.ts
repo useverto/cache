@@ -383,15 +383,43 @@ const router = new Router();
     await next();
   });
 
-  router.get("/user/:address/:input*", async (ctx, next) => {
-    const address = ctx.params.address;
+  router.get("/user/:input/:query*", async (ctx, next) => {
     const input = ctx.params.input;
+    const query = ctx.params.query;
 
-    if (/[a-z0-9_-]{43}/i.test(address)) {
-      if (input === "balances") {
-        ctx.body = await fetchBalances(address);
-      } else if (input === "orders") {
-        ctx.body = await fetchOrders(address);
+    if (/[a-z0-9_-]{43}/i.test(input)) {
+      if (query === "balances") {
+        ctx.body = await fetchBalances(input);
+      } else if (query === "orders") {
+        ctx.body = await fetchOrders(input);
+      } else if (query === "creations") {
+        const res = await Contract.aggregate()
+          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .unwind({ path: "$state.people" })
+          .project({
+            "state.people.username": 1,
+            hasAddress: {
+              $in: [input, "$state.people.addresses"],
+            },
+          })
+          .match({ hasAddress: true })
+          .limit(1);
+
+        if (res.length) {
+          ctx.body = (
+            await Contract.aggregate()
+              .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+              .unwind({ path: "$state.tokens" })
+              .match({
+                "state.tokens.lister": res[0].state.people.username,
+                "state.tokens.type": "art",
+              })
+              .project({ "state.tokens.id": 1 })
+              .limit(4)
+          ).map((item: any) => item.state.tokens.id);
+        } else {
+          ctx.body = [];
+        }
       } else {
         const res = await Contract.aggregate()
           .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
@@ -399,7 +427,7 @@ const router = new Router();
           .project({
             "state.people": 1,
             hasAddress: {
-              $in: [address, "$state.people.addresses"],
+              $in: [input, "$state.people.addresses"],
             },
           })
           .match({ hasAddress: true })
@@ -412,22 +440,36 @@ const router = new Router();
         }
       }
     } else {
-      const res = await Contract.aggregate()
-        .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
-        .unwind({ path: "$state.people" })
-        .project({
-          "state.people": 1,
-          hasUsername: {
-            $eq: [address, "$state.people.username"],
-          },
-        })
-        .match({ hasUsername: true })
-        .limit(1);
+      if (query === "creations") {
+        const res = await Contract.aggregate()
+          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .unwind({ path: "$state.tokens" })
+          .match({
+            "state.tokens.lister": input,
+            "state.tokens.type": "art",
+          })
+          .project({ "state.tokens.id": 1 })
+          .limit(4);
 
-      if (res.length) {
-        ctx.body = res[0].state.people;
+        ctx.body = res.map((item: any) => item.state.tokens.id);
       } else {
-        ctx.body = "Not Found";
+        const res = await Contract.aggregate()
+          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .unwind({ path: "$state.people" })
+          .project({
+            "state.people": 1,
+            hasUsername: {
+              $eq: [input, "$state.people.username"],
+            },
+          })
+          .match({ hasUsername: true })
+          .limit(1);
+
+        if (res.length) {
+          ctx.body = res[0].state.people;
+        } else {
+          ctx.body = "Not Found";
+        }
       }
     }
 

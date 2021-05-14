@@ -40,109 +40,116 @@ export const updateOrders = async () => {
 
     // @ts-ignore
     for (const { node } of trades) {
-      const type = node.tags.find((tag: any) => tag.name === "Type").value;
+      try {
+        const type = node.tags.find((tag: any) => tag.name === "Type").value;
 
-      if (type === "Buy") {
-        const token = node.tags.find((tag: any) => tag.name === "Token").value;
-        const ticker = await fetchTicker(token);
-        const amount = parseFloat(node.quantity.ar);
+        if (type === "Buy") {
+          const token = node.tags.find((tag: any) => tag.name === "Token")
+            .value;
+          const ticker = await fetchTicker(token);
+          const amount = parseFloat(node.quantity.ar);
 
-        await new Order({
-          _id: node.id,
-          sender: node.owner.address,
-          target: node.recipient,
-          token,
-          input: amount,
-          inputUnit: "AR",
-          outputUnit: ticker,
-          status: "pending",
-          timestamp: node.block.timestamp,
-          actions: [
-            {
-              id: node.id,
-              description: `Order - ${amount} AR`,
-              timestamp: node.block.timestamp,
-            },
-          ],
-        }).save();
-      }
-      if (type === "Sell") {
-        const token = node.tags.find((tag: any) => tag.name === "Contract")
-          .value;
-        const ticker = await fetchTicker(token);
-        const input = node.tags.find((tag: any) => tag.name === "Input").value;
-        const amount = JSON.parse(input).qty;
-
-        await new Order({
-          _id: node.id,
-          sender: node.owner.address,
-          target: node.recipient,
-          token,
-          input: amount,
-          inputUnit: ticker,
-          outputUnit: "AR",
-          status: "pending",
-          timestamp: node.block.timestamp,
-          actions: [
-            {
-              id: node.id,
-              description: `Order - ${amount} ${ticker}`,
-              timestamp: node.block.timestamp,
-            },
-          ],
-        }).save();
-      }
-      if (type === "Swap") {
-        const chain = node.tags.find((tag: any) => tag.name === "Chain")?.value;
-        const hash = node.tags.find((tag: any) => tag.name === "Hash")?.value;
-
-        if (hash) {
-          const value = node.tags.find((tag: any) => tag.name === "Value")
-            ?.value;
-
-          if (value) {
-            const token = node.tags.find((tag: any) => tag.name === "Token")
-              ?.value;
-
-            await new Order({
-              _id: node.id,
-              sender: node.owner.address,
-              target: node.recipient,
-              token: chain,
-              input: parseFloat(value),
-              inputUnit: chain,
-              outputUnit: token ? await fetchTicker(token) : "AR",
-              status: "pending",
-              timestamp: node.block.timestamp,
-              actions: [
-                {
-                  id: node.id,
-                  description: `Order - ${parseFloat(value)} ${chain}`,
-                  timestamp: node.block.timestamp,
-                },
-              ],
-            }).save();
-          }
-        } else {
           await new Order({
             _id: node.id,
             sender: node.owner.address,
             target: node.recipient,
-            token: chain,
-            input: parseFloat(node.quantity.ar),
+            token,
+            input: amount,
             inputUnit: "AR",
-            outputUnit: chain,
+            outputUnit: ticker,
             status: "pending",
             timestamp: node.block.timestamp,
             actions: [
               {
                 id: node.id,
-                description: `Order - ${parseFloat(node.quantity.ar)} AR`,
+                description: `Order - ${amount} AR`,
                 timestamp: node.block.timestamp,
               },
             ],
           }).save();
         }
+        if (type === "Sell") {
+          const token = node.tags.find((tag: any) => tag.name === "Contract")
+            .value;
+          const ticker = await fetchTicker(token);
+          const input = node.tags.find((tag: any) => tag.name === "Input")
+            .value;
+          const amount = JSON.parse(input).qty;
+
+          await new Order({
+            _id: node.id,
+            sender: node.owner.address,
+            target: node.recipient,
+            token,
+            input: amount,
+            inputUnit: ticker,
+            outputUnit: "AR",
+            status: "pending",
+            timestamp: node.block.timestamp,
+            actions: [
+              {
+                id: node.id,
+                description: `Order - ${amount} ${ticker}`,
+                timestamp: node.block.timestamp,
+              },
+            ],
+          }).save();
+        }
+        if (type === "Swap") {
+          const chain = node.tags.find((tag: any) => tag.name === "Chain")
+            ?.value;
+          const hash = node.tags.find((tag: any) => tag.name === "Hash")?.value;
+
+          if (hash) {
+            const value = node.tags.find((tag: any) => tag.name === "Value")
+              ?.value;
+
+            if (value) {
+              const token = node.tags.find((tag: any) => tag.name === "Token")
+                ?.value;
+
+              await new Order({
+                _id: node.id,
+                sender: node.owner.address,
+                target: node.recipient,
+                token: chain,
+                input: parseFloat(value),
+                inputUnit: chain,
+                outputUnit: token ? await fetchTicker(token) : "AR",
+                status: "pending",
+                timestamp: node.block.timestamp,
+                actions: [
+                  {
+                    id: node.id,
+                    description: `Order - ${parseFloat(value)} ${chain}`,
+                    timestamp: node.block.timestamp,
+                  },
+                ],
+              }).save();
+            }
+          } else {
+            await new Order({
+              _id: node.id,
+              sender: node.owner.address,
+              target: node.recipient,
+              token: chain,
+              input: parseFloat(node.quantity.ar),
+              inputUnit: "AR",
+              outputUnit: chain,
+              status: "pending",
+              timestamp: node.block.timestamp,
+              actions: [
+                {
+                  id: node.id,
+                  description: `Order - ${parseFloat(node.quantity.ar)} AR`,
+                  timestamp: node.block.timestamp,
+                },
+              ],
+            }).save();
+          }
+        }
+      } catch (error) {
+        console.log(`\n${error}`);
       }
     }
     // @ts-ignore

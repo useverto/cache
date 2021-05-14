@@ -174,7 +174,9 @@ const router = new Router();
               }
             }
 
-            let orders = await Order.find(query, undefined, { limit });
+            let orders = await Order.find(query, undefined, { limit }).sort({
+              timestamp: 1,
+            });
 
             if (after) {
               const index = orders.findIndex(

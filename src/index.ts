@@ -420,6 +420,25 @@ const router = new Router();
         } else {
           ctx.body = [];
         }
+      } else if (query === "owns") {
+        const res = await Contract.aggregate()
+          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .unwind({ path: "$state.tokens" })
+          .match({ "state.tokens.type": "art" })
+          .lookup({
+            from: "contracts",
+            localField: "state.tokens.id",
+            foreignField: "_id",
+            as: "contract",
+          })
+          .unwind({ path: "$contract" })
+          .match({
+            [`contract.state.balances.${input}`]: { $exists: true },
+          })
+          .project({ "state.tokens.id": 1 })
+          .limit(4);
+
+        ctx.body = res.map((item: any) => item.state.tokens.id);
       } else {
         const res = await Contract.aggregate()
           .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })

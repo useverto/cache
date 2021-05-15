@@ -555,7 +555,7 @@ const router = new Router();
               input: "$state.people",
               as: "person",
               cond: {
-                $eq: ["$$person.username", "$state.tokens.owner"],
+                $eq: ["$$person.username", "$state.tokens.lister"],
               },
             },
           },

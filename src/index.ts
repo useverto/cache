@@ -385,6 +385,28 @@ const router = new Router();
     await next();
   });
 
+  router.get("/users", async (ctx, next) => {
+    const people = await Contract.aggregate()
+      .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+      .unwind({ path: "$state.people" })
+      .addFields({
+        username: "$state.people.username",
+        addresses: "$state.people.addresses",
+      })
+      .project({
+        _id: "$username",
+        addresses: 1,
+      });
+
+    const res = [];
+    for (const person of people) {
+      res.push(person._id);
+      res.push(...person.addresses);
+    }
+
+    ctx.body = res;
+    await next();
+  });
   router.get("/user/:input/:query*", async (ctx, next) => {
     const input = ctx.params.input;
     const query = ctx.params.query;

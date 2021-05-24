@@ -592,11 +592,12 @@ const router = new Router();
     await next();
   });
 
-  router.get("/site/artwork", async (ctx, next) => {
+  router.get("/site/artwork/:id?", async (ctx, next) => {
+    const idFilter = ctx.params.id ? { "state.tokens.id": ctx.params.id } : {};
     const res: any = await Contract.aggregate()
       .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
       .unwind({ path: "$state.tokens" })
-      .match({ "state.tokens.type": "art" })
+      .match({ "state.tokens.type": "art", ...idFilter })
       .sample(1)
       .lookup({
         from: "contracts",

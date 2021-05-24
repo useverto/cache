@@ -495,6 +495,43 @@ const router = new Router();
           .limit(4);
 
         ctx.body = res.map((item: any) => item.state.tokens.id);
+      } else if (query === "owns") {
+        const userResponse = await Contract.aggregate()
+          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .unwind({ path: "$state.people" })
+          .match({ "state.people.username": input })
+          .project({
+            _id: null,
+            addresses: "$state.people.addresses",
+          });
+
+        if (userResponse.length) {
+          const addresses = userResponse[0].addresses;
+          const ids = new Set();
+
+          for (const address of addresses) {
+            const res = await Contract.aggregate()
+              .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+              .unwind({ path: "$state.tokens" })
+              .match({ "state.tokens.type": "art" })
+              .lookup({
+                from: "contracts",
+                localField: "state.tokens.id",
+                foreignField: "_id",
+                as: "contract",
+              })
+              .unwind({ path: "$contract" })
+              .match({
+                [`contract.state.balances.${address}`]: { $exists: true },
+              })
+              .project({ "state.tokens.id": 1 })
+              .limit(4);
+
+            res.forEach((item: any) => ids.add(item.state.tokens.id));
+          }
+
+          ctx.body = [...ids];
+        }
       } else {
         const res = await Contract.aggregate()
           .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })

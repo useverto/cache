@@ -333,6 +333,31 @@ const router = new Router();
 
     await next();
   });
+
+  router.get("/latest-activity", async (ctx, next) => {
+    const allOrders = await Order.aggregate().limit(4);
+    const formatedOrders = [];
+
+    for (const order of allOrders)
+      formatedOrders.push({
+        id: order.id,
+        status: order.status,
+        sender: order.sender,
+        target: order.target,
+        token: order.token,
+        input: `${order.input} ${order.inputUnit}`,
+        output: `${order.output || "???"} ${order.outputUnit}`,
+        timestamp: order.timestamp,
+        actions: order.actions.sort(
+          (a: any, b: any) => a.timestamp - b.timestamp
+        ),
+      });
+
+    ctx.body = formatedOrders;
+
+    await next();
+  });
+
   router.get("/order/:id", async (ctx, next) => {
     const id = ctx.params.id;
 

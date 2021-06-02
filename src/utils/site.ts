@@ -53,3 +53,35 @@ export const getCommunities = async (type: "random" | "top") => {
     };
   });
 };
+
+export const getRandomArts = async () => {
+  const res = await Contract.aggregate()
+    .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+    .unwind({ path: "$state.tokens" })
+    .match({ "state.tokens.type": "art" })
+    .sample(4)
+    .lookup({
+      from: "contracts",
+      localField: "state.tokens.id",
+      foreignField: "_id",
+      as: "contract",
+    })
+    .unwind({ path: "$contract" })
+    .project({
+      _id: "$state.tokens.id",
+      name: "$contract.state.name",
+      owner: {
+        $first: {
+          $filter: {
+            input: "$state.people",
+            as: "person",
+            cond: {
+              $eq: ["$$person.username", "$state.tokens.lister"],
+            },
+          },
+        },
+      },
+    });
+
+  return res.map(({ _id, name, owner }) => ({ id: _id, name, owner }));
+};

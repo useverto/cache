@@ -13,7 +13,7 @@ import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
-import { getCommunities } from "./utils/site";
+import { getCommunities, getRandomArts } from "./utils/site";
 import {
   getOrders,
   getPrice,
@@ -665,6 +665,12 @@ const router = new Router();
     } else {
       ctx.body = "Not Found";
     }
+
+    await next();
+  });
+
+  router.get("/site/artworks/random", async (ctx, next) => {
+    ctx.body = await getRandomArts();
 
     await next();
   });

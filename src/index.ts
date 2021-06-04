@@ -675,6 +675,25 @@ const router = new Router();
     await next();
   });
 
+  router.get("/site/type/:id", async (ctx, next) => {
+    const res = await Contract.aggregate()
+      .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+      .unwind({ path: "$state.tokens" })
+      .project({
+        id: "$state.tokens.id",
+        type: "$state.tokens.type",
+      })
+      .match({ id: ctx.params.id })
+      .limit(1);
+
+    ctx.body = {
+      id: res[0]?.id,
+      type: res[0]?.type,
+    };
+
+    await next();
+  });
+
   // Run the app.
   cache.use(router.routes());
   cache.listen(process.env.PORT || 8080);

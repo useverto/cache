@@ -335,7 +335,7 @@ const router = new Router();
   });
 
   router.get("/latest-activity", async (ctx, next) => {
-    const allOrders = await Order.aggregate().limit(4);
+    const allOrders = await Order.aggregate().sort({ timestamp: -1 }).limit(4);
     const formatedOrders = [];
 
     for (const order of allOrders)

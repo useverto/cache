@@ -694,6 +694,16 @@ const router = new Router();
     await next();
   });
 
+  // ping
+  router.get("/ping", async (ctx, next) => {
+    ctx.body = {
+      status: "online",
+      connection: mongoose.connection.readyState,
+    };
+
+    await next();
+  });
+
   // Run the app.
   cache.use(router.routes());
   cache.listen(process.env.PORT || 8080);

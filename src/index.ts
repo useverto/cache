@@ -432,9 +432,9 @@ const router = new Router();
     ctx.body = res;
     await next();
   });
-  router.get("/user/:input/:query*", async (ctx, next) => {
-    const input = ctx.params.input;
-    const query = ctx.params.query;
+  router.get("/user/:input/:query?/:after?", async (ctx, next) => {
+    const { input, query } = ctx.params;
+    const after = Number(ctx.params.after ?? 0);
 
     if (/[a-z0-9_-]{43}/i.test(input)) {
       if (query === "balances") {
@@ -464,6 +464,7 @@ const router = new Router();
                 "state.tokens.type": "art",
               })
               .project({ "state.tokens.id": 1 })
+              .skip(after)
               .limit(4)
           ).map((item: any) => item.state.tokens.id);
         } else {
@@ -485,6 +486,7 @@ const router = new Router();
             [`contract.state.balances.${input}`]: { $exists: true },
           })
           .project({ "state.tokens.id": 1 })
+          .skip(after)
           .limit(4);
 
         ctx.body = res.map((item: any) => item.state.tokens.id);
@@ -517,6 +519,7 @@ const router = new Router();
             "state.tokens.type": "art",
           })
           .project({ "state.tokens.id": 1 })
+          .skip(after)
           .limit(4);
 
         ctx.body = res.map((item: any) => item.state.tokens.id);
@@ -550,6 +553,7 @@ const router = new Router();
                 [`contract.state.balances.${address}`]: { $exists: true },
               })
               .project({ "state.tokens.id": 1 })
+              .skip(after)
               .limit(4);
 
             res.forEach((item: any) => ids.add(item.state.tokens.id));

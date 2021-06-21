@@ -719,15 +719,24 @@ const router = new Router();
             },
           },
         },
+        settings: {
+          $ifNull: [
+            {
+              $arrayToObject: "$contract.state.settings",
+            },
+            {},
+          ],
+        },
       })
       .sort({ count: -1 })
       .skip(after)
       .limit(8);
 
-    ctx.body = res.map(({ _id, ticker, name, type, owner }) => ({
+    ctx.body = res.map(({ _id, ticker, name, type, owner, settings }) => ({
       id: _id,
       ticker,
       name,
+      logo: settings?.communityLogo,
       type,
       owner,
     }));

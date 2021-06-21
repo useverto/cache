@@ -680,6 +680,61 @@ const router = new Router();
     await next();
   });
 
+  router.get("/site/tokens/:after?", async (ctx, next) => {
+    const after = Number(ctx.params.after ?? 0);
+
+    const res = await Contract.aggregate()
+      .match({ _id: COMMUNITY_CONTRACT })
+      .unwind({ path: "$state.tokens" })
+      .lookup({
+        from: "contracts",
+        localField: "state.tokens.id",
+        foreignField: "_id",
+        as: "contract",
+      })
+      .unwind({ path: "$contract" })
+      .project({
+        _id: "$state.tokens.id",
+        ticker: "$contract.state.ticker",
+        name: "$contract.state.name",
+        type: "$state.tokens.type",
+        count: {
+          $size: {
+            $ifNull: [
+              {
+                $objectToArray: "$contract.state.balances",
+              },
+              [],
+            ],
+          },
+        },
+        owner: {
+          $first: {
+            $filter: {
+              input: "$state.people",
+              as: "person",
+              cond: {
+                $eq: ["$$person.username", "$state.tokens.lister"],
+              },
+            },
+          },
+        },
+      })
+      .sort({ count: -1 })
+      .skip(after)
+      .limit(8);
+
+    ctx.body = res.map(({ _id, ticker, name, type, owner }) => ({
+      id: _id,
+      ticker,
+      name,
+      type,
+      owner,
+    }));
+
+    await next();
+  });
+
   router.get("/site/type/:id", async (ctx, next) => {
     const res = await Contract.aggregate()
       .match({ _id: COMMUNITY_CONTRACT })

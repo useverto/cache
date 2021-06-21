@@ -10,6 +10,9 @@ const client = new Arweave({
 
 const gql = new ArDB(client);
 
+// community contract ID
+export const COMMUNITY_CONTRACT = "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424";
+
 export const getTradingPosts = async (): Promise<string[]> => {
   const { state } = await Contract.findById(
     "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A",

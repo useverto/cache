@@ -14,6 +14,7 @@ import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
 import { getCommunities, getRandomArts } from "./utils/site";
+import { COMMUNITY_CONTRACT } from "./utils/verto";
 import {
   getOrders,
   getPrice,
@@ -412,7 +413,7 @@ const router = new Router();
 
   router.get("/users", async (ctx, next) => {
     const people = await Contract.aggregate()
-      .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+      .match({ _id: COMMUNITY_CONTRACT })
       .unwind({ path: "$state.people" })
       .addFields({
         username: "$state.people.username",
@@ -443,7 +444,7 @@ const router = new Router();
         ctx.body = await fetchOrders(input);
       } else if (query === "creations") {
         const res = await Contract.aggregate()
-          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.people" })
           .project({
             "state.people.username": 1,
@@ -457,7 +458,7 @@ const router = new Router();
         if (res.length) {
           ctx.body = (
             await Contract.aggregate()
-              .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+              .match({ _id: COMMUNITY_CONTRACT })
               .unwind({ path: "$state.tokens" })
               .match({
                 "state.tokens.lister": res[0].state.people.username,
@@ -472,7 +473,7 @@ const router = new Router();
         }
       } else if (query === "owns") {
         const res = await Contract.aggregate()
-          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.tokens" })
           .match({ "state.tokens.type": "art" })
           .lookup({
@@ -492,7 +493,7 @@ const router = new Router();
         ctx.body = res.map((item: any) => item.state.tokens.id);
       } else {
         const res = await Contract.aggregate()
-          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.people" })
           .project({
             "state.people": 1,
@@ -512,7 +513,7 @@ const router = new Router();
     } else {
       if (query === "creations") {
         const res = await Contract.aggregate()
-          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.tokens" })
           .match({
             "state.tokens.lister": input,
@@ -525,7 +526,7 @@ const router = new Router();
         ctx.body = res.map((item: any) => item.state.tokens.id);
       } else if (query === "owns") {
         const userResponse = await Contract.aggregate()
-          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.people" })
           .match({ "state.people.username": input })
           .project({
@@ -539,7 +540,7 @@ const router = new Router();
 
           for (const address of addresses) {
             const res = await Contract.aggregate()
-              .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+              .match({ _id: COMMUNITY_CONTRACT })
               .unwind({ path: "$state.tokens" })
               .match({ "state.tokens.type": "art" })
               .lookup({
@@ -563,7 +564,7 @@ const router = new Router();
         }
       } else {
         const res = await Contract.aggregate()
-          .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+          .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.people" })
           .project({
             "state.people": 1,
@@ -624,7 +625,7 @@ const router = new Router();
   router.get("/site/artwork/:id?", async (ctx, next) => {
     const idFilter = ctx.params.id ? { "state.tokens.id": ctx.params.id } : {};
     const res: any = await Contract.aggregate()
-      .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+      .match({ _id: COMMUNITY_CONTRACT })
       .unwind({ path: "$state.tokens" })
       .match({ "state.tokens.type": "art", ...idFilter })
       .sample(1)
@@ -681,7 +682,7 @@ const router = new Router();
 
   router.get("/site/type/:id", async (ctx, next) => {
     const res = await Contract.aggregate()
-      .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+      .match({ _id: COMMUNITY_CONTRACT })
       .unwind({ path: "$state.tokens" })
       .project({
         id: "$state.tokens.id",

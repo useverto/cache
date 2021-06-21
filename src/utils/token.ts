@@ -1,6 +1,7 @@
 import moment from "moment";
 import Order from "../models/order";
 import { fetchTicker } from "./orders";
+import { COMMUNITY_CONTRACT } from "./verto";
 
 export const getOrders = async (id: string) => {
   const res = await Order.find({ token: id });
@@ -42,7 +43,7 @@ export const getPrice = async (id: string) => {
         {
           $match: {
             $expr: {
-              $eq: ["mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424", "$_id"],
+              $eq: [COMMUNITY_CONTRACT, "$_id"],
             },
           },
         },

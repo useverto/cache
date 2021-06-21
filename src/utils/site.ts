@@ -1,4 +1,5 @@
 import Contract from "../models/contract";
+import { COMMUNITY_CONTRACT } from "./verto";
 
 export const getCommunities = async (type: "random" | "top") => {
   const query = Contract.aggregate()
@@ -56,7 +57,7 @@ export const getCommunities = async (type: "random" | "top") => {
 
 export const getRandomArts = async () => {
   const res = await Contract.aggregate()
-    .match({ _id: "mp8gF3oo3MCJ6hBdminh2Uborv0ZS_I1o9my_2dp424" })
+    .match({ _id: COMMUNITY_CONTRACT })
     .unwind({ path: "$state.tokens" })
     .match({ "state.tokens.type": "art" })
     .sample(4)

@@ -1,29 +1,48 @@
 import Contract from "../models/contract";
 import Order from "../models/order";
+import { COMMUNITY_CONTRACT } from "./verto";
 
 export const fetchBalances = async (addr: string) => {
-  const key = `state.balances.${addr}`;
-  const res = await Contract.find(
-    {
-      [key]: { $exists: true, $gt: 0 },
-    },
-    `_id state.name state.ticker ${key} state.settings`
-  );
+  const res = await Contract.aggregate()
+    .match({ _id: COMMUNITY_CONTRACT })
+    .unwind({ path: "$state.tokens" })
+    .lookup({
+      from: "contracts",
+      localField: "state.tokens.id",
+      foreignField: "_id",
+      as: "contract",
+    })
+    .unwind({ path: "$contract" })
+    .match({
+      "contract.state.balances": { $exists: true },
+      [`contract.state.balances.${addr}`]: {
+        $exists: true,
+        $gt: 0,
+      },
+    })
+    .project({
+      _id: "$state.tokens.id",
+      name: "$contract.state.name",
+      ticker: "$contract.state.ticker",
+      balance: `$contract.state.balances.${addr}`,
+      settings: {
+        $ifNull: [
+          {
+            $arrayToObject: "$contract.state.settings",
+          },
+          {},
+        ],
+      },
+    });
 
   return res
-    .map((elem: any) => {
-      const logoSetting = elem.state.settings?.find(
-        (entry: any) => entry[0] === "communityLogo"
-      );
-
-      return {
-        id: elem._id,
-        balance: elem.state.balances[addr],
-        name: elem.state.name,
-        ticker: elem.state.ticker,
-        logo: logoSetting ? logoSetting[1] : undefined,
-      };
-    })
+    .map((elem: any) => ({
+      id: elem._id,
+      balance: elem.balance,
+      name: elem.name,
+      ticker: elem.ticker,
+      logo: elem?.settings?.communityLogo,
+    }))
     .sort((a: any, b: any) => b.balance - a.balance);
 };
 

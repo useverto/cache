@@ -744,6 +744,103 @@ const router = new Router();
     await next();
   });
 
+  router.get("/site/search/:query?", async (ctx, next) => {
+    if (ctx.params.query === "" || !ctx.params.query) {
+      ctx.body = [];
+    } else {
+      const query = new RegExp(ctx.params.query, "gi");
+      const tokenSearch = await Contract.aggregate()
+        .match({ _id: COMMUNITY_CONTRACT })
+        .unwind({ path: "$state.tokens" })
+        .lookup({
+          from: "contracts",
+          localField: "state.tokens.id",
+          foreignField: "_id",
+          as: "contract",
+        })
+        .unwind({ path: "$contract" })
+        .match({
+          $or: [
+            { "contract.state.name": { $regex: query } },
+            { "contract.state.ticker": { $regex: query } },
+          ],
+        })
+        .limit(7)
+        .project({
+          _id: "$state.tokens.id",
+          ticker: "$contract.state.ticker",
+          name: "$contract.state.name",
+          type: "$state.tokens.type",
+          count: {
+            $size: {
+              $ifNull: [
+                {
+                  $objectToArray: "$contract.state.balances",
+                },
+                [],
+              ],
+            },
+          },
+          owner: {
+            $first: {
+              $filter: {
+                input: "$state.people",
+                as: "person",
+                cond: {
+                  $eq: ["$$person.username", "$state.tokens.lister"],
+                },
+              },
+            },
+          },
+          settings: {
+            $ifNull: [
+              {
+                $arrayToObject: "$contract.state.settings",
+              },
+              {},
+            ],
+          },
+        })
+        .sort({ count: -1 });
+
+      const userSearch = await Contract.aggregate()
+        .match({ _id: COMMUNITY_CONTRACT })
+        .unwind({ path: "$state.people" })
+        .match({
+          $or: [
+            { "state.people.name": { $regex: query } },
+            { "state.people.username": { $regex: query } },
+          ],
+        })
+        .limit(7)
+        .project({
+          _id: "$state.people.username",
+          username: "$state.people.username",
+          name: "$state.people.name",
+          image: "$state.people.image",
+        });
+
+      ctx.body = [
+        ...tokenSearch.map(({ _id, ticker, name, type, owner, settings }) => ({
+          id: _id,
+          ticker,
+          name,
+          type,
+          owner,
+          image: settings?.communityLogo ?? _id,
+        })),
+        ...userSearch.map(({ username, name, image }) => ({
+          username,
+          name,
+          image,
+          type: "user",
+        })),
+      ];
+    }
+
+    await next();
+  });
+
   router.get("/site/type/:id", async (ctx, next) => {
     const res = await Contract.aggregate()
       .match({ _id: COMMUNITY_CONTRACT })

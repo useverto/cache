@@ -3,14 +3,25 @@ import { COMMUNITY_CONTRACT } from "./verto";
 
 export const getCommunities = async (type: "random" | "top") => {
   const query = Contract.aggregate()
+    .match({ _id: COMMUNITY_CONTRACT })
+    .unwind({ path: "$state.tokens" })
+    .match({ "state.tokens.type": "community" })
+    .lookup({
+      from: "contracts",
+      localField: "state.tokens.id",
+      foreignField: "_id",
+      as: "contract",
+    })
+    .unwind({ path: "$contract" })
     .project({
-      "state.name": 1,
-      "state.ticker": 1,
+      _id: "$state.tokens.id",
+      name: "$contract.state.name",
+      ticker: "$contract.state.ticker",
       count: {
         $size: {
           $ifNull: [
             {
-              $objectToArray: "$state.balances",
+              $objectToArray: "$contract.state.balances",
             },
             [],
           ],
@@ -19,20 +30,10 @@ export const getCommunities = async (type: "random" | "top") => {
       settings: {
         $ifNull: [
           {
-            $arrayToObject: "$state.settings",
+            $arrayToObject: "$contract.state.settings",
           },
           {},
         ],
-      },
-    })
-    .match({
-      "settings.communityLogo": {
-        $exists: true,
-        $ne: "",
-      },
-      "settings.communityDescription": {
-        $exists: true,
-        $ne: "",
       },
     });
 
@@ -47,8 +48,8 @@ export const getCommunities = async (type: "random" | "top") => {
   return res!.map((elem: any) => {
     return {
       id: elem._id,
-      name: elem.state.name,
-      ticker: elem.state.ticker,
+      name: elem.name,
+      ticker: elem.ticker,
       logo: elem.settings.communityLogo,
       description: elem.settings.communityDescription,
     };

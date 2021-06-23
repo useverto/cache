@@ -765,12 +765,14 @@ const router = new Router();
             { "contract.state.ticker": { $regex: query } },
           ],
         })
-        .limit(7)
         .project({
           _id: "$state.tokens.id",
           ticker: "$contract.state.ticker",
           name: "$contract.state.name",
           type: "$state.tokens.type",
+          isCommunity: {
+            $eq: ["$state.tokens.type", "community"],
+          },
           count: {
             $size: {
               $ifNull: [
@@ -801,7 +803,8 @@ const router = new Router();
             ],
           },
         })
-        .sort({ count: -1 });
+        .sort({ isCommunity: -1, count: -1 })
+        .limit(8);
 
       const userSearch = await Contract.aggregate()
         .match({ _id: COMMUNITY_CONTRACT })
@@ -812,7 +815,7 @@ const router = new Router();
             { "state.people.username": { $regex: query } },
           ],
         })
-        .limit(7)
+        .limit(5)
         .project({
           _id: "$state.people.username",
           username: "$state.people.username",

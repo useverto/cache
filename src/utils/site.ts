@@ -57,7 +57,29 @@ export const getCommunities = async (type: "random" | "top") => {
 };
 
 export const getRandomArts = async () => {
-  const res = await Contract.aggregate()
+  const collections = (await Contract.aggregate()
+    .match({ _id: COMMUNITY_CONTRACT })
+    .unwind({ path: "$state.tokens" })
+    .match({ "state.tokens.type": "collection" })
+    .sample(4)
+    .project({
+      _id: "$state.tokens.id",
+      name: "$state.tokens.name",
+      items: "$state.tokens.items",
+      owner: {
+        $first: {
+          $filter: {
+            input: "$state.people",
+            as: "person",
+            cond: {
+              $eq: ["$$person.username", "$state.tokens.lister"],
+            },
+          },
+        },
+      },
+    })).map(({ _id, name, items, owner }) => ({ id: _id, name, items, owner }));
+
+  const arts = (await Contract.aggregate()
     .match({ _id: COMMUNITY_CONTRACT })
     .unwind({ path: "$state.tokens" })
     .match({ "state.tokens.type": "art" })
@@ -83,7 +105,7 @@ export const getRandomArts = async () => {
           },
         },
       },
-    });
+    })).map(({ _id, name, owner }) => ({ id: _id, name, owner }));
 
-  return res.map(({ _id, name, owner }) => ({ id: _id, name, owner }));
+  return [...collections, ...arts].slice(0, 4);
 };

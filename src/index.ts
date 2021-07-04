@@ -662,6 +662,43 @@ const router = new Router();
     await next();
   });
 
+  router.get("/site/collection/:id", async (ctx, next) => {
+    const res: any = await Contract.aggregate()
+      .match({ _id: COMMUNITY_CONTRACT })
+      .unwind({ path: "$state.tokens" })
+      .match({
+        "state.tokens.type": "collection",
+        "state.tokens.id": ctx.params.id,
+      })
+      .project({
+        _id: "$state.tokens.id",
+        name: "$state.tokens.name",
+        description: "$state.tokens.description",
+        owner: {
+          $first: {
+            $filter: {
+              input: "$state.people",
+              as: "person",
+              cond: {
+                $eq: ["$$person.username", "$state.tokens.lister"],
+              },
+            },
+          },
+        },
+        items: "$state.tokens.items",
+      });
+
+    ctx.body = {
+      id: res[0]._id,
+      name: res[0].name,
+      description: res[0].description,
+      owner: res[0].owner,
+      items: res[0].items,
+    };
+
+    await next();
+  });
+
   router.get("/site/communities/:type", async (ctx, next) => {
     const type = ctx.params.type;
 
@@ -695,19 +732,7 @@ const router = new Router();
       .unwind({ path: "$contract" })
       .project({
         _id: "$state.tokens.id",
-        ticker: "$contract.state.ticker",
-        name: "$contract.state.name",
         type: "$state.tokens.type",
-        count: {
-          $size: {
-            $ifNull: [
-              {
-                $objectToArray: "$contract.state.balances",
-              },
-              [],
-            ],
-          },
-        },
         owner: {
           $first: {
             $filter: {
@@ -719,27 +744,56 @@ const router = new Router();
             },
           },
         },
-        settings: {
-          $ifNull: [
+        data: {
+          $cond: [
+            { $eq: ["$state.tokens.type", "collection"] },
             {
-              $arrayToObject: "$contract.state.settings",
+              name: "$state.tokens.name",
+              items: "$state.tokens.items",
+              count: {
+                $size: "$state.tokens.items",
+              },
             },
-            {},
+            {
+              ticker: "$contract.state.ticker",
+              name: "$contract.state.name",
+              count: {
+                $size: {
+                  $ifNull: [
+                    {
+                      $objectToArray: "$contract.state.balances",
+                    },
+                    [],
+                  ],
+                },
+              },
+              settings: {
+                $ifNull: [
+                  {
+                    $arrayToObject: "$contract.state.settings",
+                  },
+                  {},
+                ],
+              },
+            },
           ],
         },
       })
-      .sort({ count: -1 })
+      .sort({ "data.count": -1 })
       .skip(after)
       .limit(8);
 
-    ctx.body = res.map(({ _id, ticker, name, type, owner, settings }) => ({
-      id: _id,
-      ticker,
-      name,
-      logo: settings?.communityLogo,
-      type,
-      owner,
-    }));
+    ctx.body = res.map(
+      ({ _id, type, owner, data: { ticker, name, settings, items } }) => ({
+        id: _id,
+        ticker,
+        name,
+        logo: settings?.communityLogo,
+        type,
+        owner,
+        items,
+      })
+    );
 
     await next();
   });

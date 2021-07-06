@@ -742,6 +742,8 @@ const router = new Router();
       .unwind({ path: "$contract" })
       .project({
         _id: "$state.tokens.id",
+        ticker: "$contract.state.ticker",
+        name: "$contract.state.name",
         type: "$state.tokens.type",
         owner: {
           $first: {
@@ -754,47 +756,38 @@ const router = new Router();
             },
           },
         },
-        data: {
+        items: "$contract.state.items",
+        count: {
           $cond: [
             { $eq: ["$state.tokens.type", "collection"] },
+            { $size: "$contract.state.items" },
             {
-              name: "$state.tokens.name",
-              items: "$state.tokens.items",
-              count: {
-                $size: "$state.tokens.items",
-              },
-            },
-            {
-              ticker: "$contract.state.ticker",
-              name: "$contract.state.name",
-              count: {
-                $size: {
-                  $ifNull: [
-                    {
-                      $objectToArray: "$contract.state.balances",
-                    },
-                    [],
-                  ],
-                },
-              },
-              settings: {
+              $size: {
                 $ifNull: [
                   {
-                    $arrayToObject: "$contract.state.settings",
+                    $objectToArray: "$contract.state.balances",
                   },
-                  {},
+                  [],
                 ],
               },
             },
           ],
         },
+        settings: {
+          $ifNull: [
+            {
+              $arrayToObject: "$contract.state.settings",
+            },
+            {},
+          ],
+        },
       })
-      .sort({ "data.count": -1 })
+      .sort({ count: -1 })
       .skip(after)
       .limit(8);
 
     ctx.body = res.map(
-      ({ _id, type, owner, data: { ticker, name, settings, items } }) => ({
+      ({ _id, name, type, owner, ticker, settings, items }) => ({
         id: _id,
         ticker,
         name,

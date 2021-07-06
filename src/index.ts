@@ -670,10 +670,18 @@ const router = new Router();
         "state.tokens.type": "collection",
         "state.tokens.id": ctx.params.id,
       })
+      .lookup({
+        from: "contracts",
+        localField: "state.tokens.id",
+        foreignField: "_id",
+        as: "contract",
+      })
+      .unwind({ path: "$contract" })
       .project({
         _id: "$state.tokens.id",
-        name: "$state.tokens.name",
-        description: "$state.tokens.description",
+        name: "$contract.state.name",
+        description: "$contract.state.description",
+        collaborators: "$contract.state.collaborators",
         owner: {
           $first: {
             $filter: {
@@ -685,13 +693,15 @@ const router = new Router();
             },
           },
         },
-        items: "$state.tokens.items",
-      });
+        items: "$contract.state.items",
+      })
+      .limit(1);
 
     ctx.body = {
       id: res[0]._id,
       name: res[0].name,
       description: res[0].description,
+      collaborators: res[0].collaborators,
       owner: res[0].owner,
       items: res[0].items,
     };

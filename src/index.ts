@@ -890,6 +890,7 @@ const router = new Router();
           username: "$state.people.username",
           name: "$state.people.name",
           image: "$state.people.image",
+          addresses: "$state.people.addresses",
         });
 
       ctx.body = [
@@ -901,10 +902,11 @@ const router = new Router();
           owner,
           image: settings?.communityLogo ?? _id,
         })),
-        ...userSearch.map(({ username, name, image }) => ({
+        ...userSearch.map(({ username, name, image, addresses }) => ({
           username,
           name,
           image,
+          addresses,
           type: "user",
         })),
       ];

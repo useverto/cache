@@ -111,7 +111,7 @@ const router = new Router();
           .project({ _id: "$state.tokens.id" });
 
         res = res.filter((entry: any) =>
-          listed.find((token) => token.id === entry.token)
+          listed.find((token) => token._id === entry.token)
         );
       }
 

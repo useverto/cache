@@ -81,7 +81,7 @@ const router = new Router();
     if (/[a-z0-9_-]{43}/i.test(input)) {
       ctx.body = await fetchContract(input, filter && filter.toString());
     } else if (input === "tokens") {
-      const res = await Order.aggregate()
+      let res = await Order.aggregate()
         .group({
           _id: null,
           token: { $addToSet: "$token" },
@@ -102,6 +102,18 @@ const router = new Router();
           "contract.state.ticker": 1,
         })
         .sort({ "contract.state.ticker": 1 });
+
+      if (ctx.query.listed === "true") {
+        const listed = await Contract.aggregate()
+          .match({ _id: COMMUNITY_CONTRACT })
+          .unwind({ path: "$state.tokens" })
+          .match({ "state.tokens.type": { $ne: "collection" } })
+          .project({ _id: "$state.tokens.id" });
+
+        res = res.filter((entry: any) =>
+          listed.find((token) => token.id === entry.token)
+        );
+      }
 
       ctx.body = res.map((entry: any) => {
         return {

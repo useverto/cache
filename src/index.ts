@@ -818,80 +818,95 @@ const router = new Router();
       ctx.body = [];
     } else {
       const query = new RegExp(ctx.params.query, "gi");
-      const tokenSearch = await Contract.aggregate()
-        .match({ _id: COMMUNITY_CONTRACT })
-        .unwind({ path: "$state.tokens" })
-        .lookup({
-          from: "contracts",
-          localField: "state.tokens.id",
-          foreignField: "_id",
-          as: "contract",
-        })
-        .unwind({ path: "$contract" })
-        .match({
-          $or: [
-            { "contract.state.name": { $regex: query } },
-            { "contract.state.ticker": { $regex: query } },
-          ],
-        })
-        .project({
-          _id: "$state.tokens.id",
-          ticker: "$contract.state.ticker",
-          name: "$contract.state.name",
-          type: "$state.tokens.type",
-          isCommunity: {
-            $eq: ["$state.tokens.type", "community"],
-          },
-          count: {
-            $size: {
+      const type = ctx.query.type;
+      let tokenSearch = [];
+
+      if (!type || type !== "user") {
+        const typeFilter = type ? { "state.tokens.type": type } : {};
+
+        tokenSearch = await Contract.aggregate()
+          .match({ _id: COMMUNITY_CONTRACT })
+          .unwind({ path: "$state.tokens" })
+          .lookup({
+            from: "contracts",
+            localField: "state.tokens.id",
+            foreignField: "_id",
+            as: "contract",
+          })
+          .unwind({ path: "$contract" })
+          .match({
+            $and: [
+              typeFilter,
+              {
+                $or: [
+                  { "contract.state.name": { $regex: query } },
+                  { "contract.state.ticker": { $regex: query } },
+                ],
+              },
+            ],
+          })
+          .project({
+            _id: "$state.tokens.id",
+            ticker: "$contract.state.ticker",
+            name: "$contract.state.name",
+            type: "$state.tokens.type",
+            isCommunity: {
+              $eq: ["$state.tokens.type", "community"],
+            },
+            count: {
+              $size: {
+                $ifNull: [
+                  {
+                    $objectToArray: "$contract.state.balances",
+                  },
+                  [],
+                ],
+              },
+            },
+            owner: {
+              $first: {
+                $filter: {
+                  input: "$state.people",
+                  as: "person",
+                  cond: {
+                    $eq: ["$$person.username", "$state.tokens.lister"],
+                  },
+                },
+              },
+            },
+            settings: {
               $ifNull: [
                 {
-                  $objectToArray: "$contract.state.balances",
+                  $arrayToObject: "$contract.state.settings",
                 },
-                [],
+                {},
               ],
             },
-          },
-          owner: {
-            $first: {
-              $filter: {
-                input: "$state.people",
-                as: "person",
-                cond: {
-                  $eq: ["$$person.username", "$state.tokens.lister"],
-                },
-              },
-            },
-          },
-          settings: {
-            $ifNull: [
-              {
-                $arrayToObject: "$contract.state.settings",
-              },
-              {},
-            ],
-          },
-        })
-        .sort({ isCommunity: -1, count: -1 })
-        .limit(8);
+          })
+          .sort({ isCommunity: -1, count: -1 })
+          .limit(type ? Number.POSITIVE_INFINITY : 8);
+      }
 
-      const userSearch = await Contract.aggregate()
-        .match({ _id: COMMUNITY_CONTRACT })
-        .unwind({ path: "$state.people" })
-        .match({
-          $or: [
-            { "state.people.name": { $regex: query } },
-            { "state.people.username": { $regex: query } },
-          ],
-        })
-        .limit(5)
-        .project({
-          _id: "$state.people.username",
-          username: "$state.people.username",
-          name: "$state.people.name",
-          image: "$state.people.image",
-          addresses: "$state.people.addresses",
-        });
+      let userSearch = [];
+
+      if (!type || type === "user")
+        userSearch = await Contract.aggregate()
+          .match({ _id: COMMUNITY_CONTRACT })
+          .unwind({ path: "$state.people" })
+          .match({
+            $or: [
+              { "state.people.name": { $regex: query } },
+              { "state.people.username": { $regex: query } },
+            ],
+          })
+          .limit(type ? Number.POSITIVE_INFINITY : 5)
+          .project({
+            _id: "$state.people.username",
+            username: "$state.people.username",
+            name: "$state.people.name",
+            image: "$state.people.image",
+            addresses: "$state.people.addresses",
+          });
 
       ctx.body = [
         ...tokenSearch.map(({ _id, ticker, name, type, owner, settings }) => ({

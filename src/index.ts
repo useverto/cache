@@ -841,6 +841,7 @@ const router = new Router();
                 $or: [
                   { "contract.state.name": { $regex: query } },
                   { "contract.state.ticker": { $regex: query } },
+                  { "state.tokens.id": { $regex: query } },
                 ],
               },
             ],
@@ -850,8 +851,16 @@ const router = new Router();
             ticker: "$contract.state.ticker",
             name: "$contract.state.name",
             type: "$state.tokens.type",
-            isCommunity: {
-              $eq: ["$state.tokens.type", "community"],
+            prioritize: {
+              // prioritize communities and collections
+              $or: [
+                {
+                  $eq: ["$state.tokens.type", "community"],
+                },
+                {
+                  $eq: ["$state.tokens.type", "collection"],
+                },
+              ],
             },
             count: {
               $size: {
@@ -860,6 +869,24 @@ const router = new Router();
                     $objectToArray: "$contract.state.balances",
                   },
                   [],
+                ],
+              },
+            },
+            notIDMatch: {
+              cond: {
+                $or: [
+                  {
+                    $regexMatch: {
+                      input: "$contract.state.name",
+                      regex: query,
+                    },
+                  },
+                  {
+                    $regexMatch: {
+                      input: "$contract.state.ticker",
+                      regex: query,
+                    },
+                  },
                 ],
               },
             },
@@ -883,7 +910,7 @@ const router = new Router();
               ],
             },
           })
-          .sort({ isCommunity: -1, count: -1 })
+          .sort({ prioritize: -1, count: -1, notIDMatch: -1 })
           .limit(type ? Number.POSITIVE_INFINITY : 8);
       }
 

@@ -813,16 +813,19 @@ const router = new Router();
     await next();
   });
 
-  router.get("/site/search/:query?", async (ctx, next) => {
+  router.get("/site/search/:query?/:page?", async (ctx, next) => {
     if (ctx.params.query === "" || !ctx.params.query) {
       ctx.body = [];
     } else {
       const query = new RegExp(ctx.params.query, "gi");
       const type = ctx.query.type;
+      const page = Number(ctx.params.page ?? "0");
+
       let tokenSearch = [];
 
       if (!type || type !== "user") {
         const typeFilter = type ? { "state.tokens.type": type } : {};
+        const tokensOnPage = 8;
 
         tokenSearch = await Contract.aggregate()
           .match({ _id: COMMUNITY_CONTRACT })
@@ -911,12 +914,14 @@ const router = new Router();
             },
           })
           .sort({ prioritize: -1, count: -1, notIDMatch: -1 })
-          .limit(type ? Number.POSITIVE_INFINITY : 8);
+          .skip(page * tokensOnPage)
+          .limit(type ? Number.POSITIVE_INFINITY : tokensOnPage);
       }
 
       let userSearch = [];
 
-      if (!type || type === "user")
+      if (!type || type === "user") {
+        const usersOnPage = 5;
         userSearch = await Contract.aggregate()
           .match({ _id: COMMUNITY_CONTRACT })
           .unwind({ path: "$state.people" })
@@ -926,7 +931,8 @@ const router = new Router();
               { "state.people.username": { $regex: query } },
             ],
           })
-          .limit(type ? Number.POSITIVE_INFINITY : 5)
+          .skip(page * usersOnPage)
+          .limit(type ? Number.POSITIVE_INFINITY : usersOnPage)
           .project({
             _id: "$state.people.username",
             username: "$state.people.username",
@@ -934,6 +940,7 @@ const router = new Router();
             image: "$state.people.image",
             addresses: "$state.people.addresses",
           });
+      }
 
       ctx.body = [
         ...tokenSearch.map(({ _id, ticker, name, type, owner, settings }) => ({

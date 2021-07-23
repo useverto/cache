@@ -2,6 +2,7 @@ import ArDB from "ardb";
 import Arweave from "arweave";
 import Contract from "../models/contract";
 import { newContract } from "./contracts";
+import { COMMUNITY_CONTRACT } from "./verto";
 
 const client = new Arweave({
   host: "arweave.net",
@@ -21,16 +22,30 @@ const fetchCommunityIDs = async () => {
   return res.map((edge: any) => edge.node.id);
 };
 
+const fetchListedContracts = async () => {
+  const res = await Contract.aggregate()
+    .match({ _id: COMMUNITY_CONTRACT })
+    .unwind({ path: "$state.tokens" })
+    .project({
+      _id: "$state.tokens.id",
+    });
+
+  return res.map(({ _id }) => _id);
+};
+
+// fetch communities and other tokens that are listed
 export const fetchCommunities = async () => {
-  console.log(`\nFetching communities ...`);
+  console.log(`\nFetching communities and tokens ...`);
   let counter = 0;
 
   const ids = await fetchCommunityIDs();
+  const listed = await fetchListedContracts();
   const all = (await Contract.find({}, "_id")).map(
     (contract: any) => contract._id
   );
+  const toFetch = ids.concat(listed.filter((id) => ids.includes(id)));
 
-  for (const id of ids) {
+  for (const id of toFetch) {
     if (all.indexOf(id) === -1) {
       await newContract(id);
       counter++;

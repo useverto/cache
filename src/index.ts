@@ -12,6 +12,7 @@ import {
   fetchContracts,
   newContract,
   fetchListedContracts,
+  updateContract,
 } from "./utils/contracts";
 import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
@@ -31,9 +32,15 @@ import Contract from "./models/contract";
 
 import { handleNotification } from "./utils/notifications";
 
-const communities = async () => {
+const listedContracts = async () => {
   await fetchListedContracts();
-  setTimeout(communities, 450000);
+  setTimeout(listedContracts, 450000);
+};
+
+const baseContracts = async () => {
+  await updateContract(COMMUNITY_CONTRACT);
+  // TODO: fetch invite contract
+  setTimeout(listedContracts, 600000);
 };
 
 const posts = async () => {
@@ -63,8 +70,11 @@ const router = new Router();
     { useNewUrlParser: true, useUnifiedTopology: true }
   );
 
-  // Setup listener for communities.
-  communities();
+  // Setup listener for listed contracts (tokens, collections, etc.).
+  listedContracts();
+
+  // Setup listener for base contracts (invites, community)
+  baseContracts();
 
   // Setup listener for posts.
   posts();

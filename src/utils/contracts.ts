@@ -2,6 +2,7 @@ import ArDB from "ardb";
 import Arweave from "arweave";
 import Contract from "../models/contract";
 import { readContract } from "smartweave";
+import { COMMUNITY_CONTRACT } from "./verto";
 
 const client = new Arweave({
   host: "arweave.net",
@@ -87,4 +88,30 @@ const fetchLatestInteraction = async (id: string) => {
 
   const latestInteraction = res[0]?.node.id ?? "";
   return latestInteraction;
+};
+
+export const fetchListedContracts = async () => {
+  console.log(`\nFetching listed contracts ...`);
+  let counter = 0;
+
+  const ids = (
+    await Contract.aggregate()
+      .match({ _id: COMMUNITY_CONTRACT })
+      .unwind({ path: "$state.tokens" })
+      .project({
+        _id: "$state.tokens.id",
+      })
+  ).map(({ _id }) => _id);
+  const all = (await Contract.find({}, "_id")).map(
+    (contract: any) => contract._id
+  );
+
+  for (const id of ids) {
+    if (all.indexOf(id) === -1) {
+      await newContract(id);
+      counter++;
+    }
+  }
+
+  console.log(`\n... Fetched ${counter} new contracts.`);
 };

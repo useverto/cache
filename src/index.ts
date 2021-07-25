@@ -1,5 +1,4 @@
 require("dotenv").config();
-import { fetchCommunities } from "./utils/communities";
 import { fetchPosts } from "./utils/posts";
 import { updateOrders } from "./utils/orders";
 import { updateBatches } from "./utils/batches";
@@ -8,7 +7,12 @@ import body from "koa-body";
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
-import { fetchContract, fetchContracts, newContract } from "./utils/contracts";
+import {
+  fetchContract,
+  fetchContracts,
+  newContract,
+  fetchListedContracts,
+} from "./utils/contracts";
 import Order from "./models/order";
 import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
@@ -28,8 +32,8 @@ import Contract from "./models/contract";
 import { handleNotification } from "./utils/notifications";
 
 const communities = async () => {
-  await fetchCommunities();
-  setTimeout(communities, 600000);
+  await fetchListedContracts();
+  setTimeout(communities, 450000);
 };
 
 const posts = async () => {

@@ -13,6 +13,9 @@ const gql = new ArDB(client);
 // community contract ID
 export const COMMUNITY_CONTRACT = "t9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE";
 
+// invite contract ID
+export const INVITE_CONTRACT = "8X7JO-F6sumwynRXbi5YhXHuqKbGlMLPE6zMOR_rWXc";
+
 export const getTradingPosts = async (): Promise<string[]> => {
   const { state } = await Contract.findById(
     "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A",

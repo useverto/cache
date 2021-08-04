@@ -19,7 +19,7 @@ import { fetchStats } from "./utils/batches";
 import { getHistorical, getPairs, getTickers } from "./utils/gecko";
 import { fetchBalances, fetchOrders } from "./utils/user";
 import { getCommunities, getRandomArts } from "./utils/site";
-import { COMMUNITY_CONTRACT } from "./utils/verto";
+import { COMMUNITY_CONTRACT, INVITE_CONTRACT } from "./utils/verto";
 import {
   getOrders,
   getPrice,
@@ -39,8 +39,8 @@ const listedContracts = async () => {
 
 const baseContracts = async () => {
   await updateContract(COMMUNITY_CONTRACT);
-  // TODO: fetch invite contract
-  setTimeout(listedContracts, 600000);
+  await updateContract(INVITE_CONTRACT);
+  setTimeout(baseContracts, 600000);
 };
 
 const posts = async () => {

@@ -39,7 +39,7 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
         if (type === "Buy") {
           const token = node.tags.find((tag: any) => tag.name === "Token")
             .value;
-          const ticker = await fetchTicker(token);
+          const ticker = await fetchTicker(client, gql, token);
           const amount = parseFloat(node.quantity.ar);
 
           await new Order({
@@ -64,7 +64,7 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
         if (type === "Sell") {
           const token = node.tags.find((tag: any) => tag.name === "Contract")
             .value;
-          const ticker = await fetchTicker(token);
+          const ticker = await fetchTicker(client, gql, token);
           const input = node.tags.find((tag: any) => tag.name === "Input")
             .value;
           const amount = JSON.parse(input).qty;
@@ -108,7 +108,7 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
                 token: chain,
                 input: parseFloat(value),
                 inputUnit: chain,
-                outputUnit: token ? await fetchTicker(token) : "AR",
+                outputUnit: token ? await fetchTicker(client, gql, token) : "AR",
                 status: "pending",
                 timestamp: node.block.timestamp,
                 actions: [
@@ -164,7 +164,7 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
       );
       const qty = input.qty;
       const token = node.tags.find((tag) => tag.name === "Contract")?.value!;
-      const ticker = await fetchTicker(token);
+      const ticker = await fetchTicker(client, gql, token);
 
       const match = node.tags.find((tag) => tag.name === "Match");
       const res = {
@@ -335,7 +335,7 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
           node.tags.find((tag) => tag.name === "Input")?.value!
         );
         const token = node.tags.find((tag) => tag.name === "Contract")?.value!;
-        const ticker = await fetchTicker(token);
+        const ticker = await fetchTicker(client, gql, token);
 
         qty = `${input.qty} ${ticker}`;
       } else {
@@ -375,12 +375,12 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
   }
 };
 
-export const fetchTicker = async (id: string): Promise<string> => {
+export const fetchTicker = async (client: Arweave, gql: ArDB, id: string): Promise<string> => {
   let contract = await Contract.findById(id, `state.ticker`);
   if (contract) {
     return contract.state.ticker;
   } else {
-    await newContract(id);
-    return await fetchTicker(id);
+    await newContract(client, gql, id);
+    return await fetchTicker(client, gql, id);
   }
 };

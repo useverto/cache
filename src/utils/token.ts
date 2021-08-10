@@ -1,3 +1,5 @@
+import ArDB from "ardb";
+import Arweave from "arweave";
 import moment from "moment";
 import Order from "../models/order";
 import { fetchTicker } from "./orders";
@@ -170,8 +172,8 @@ export const getPriceHistory = async (id: string) => {
   return fill(history);
 };
 
-export const getVolume = async (id: string) => {
-  const ticker = await fetchTicker(id);
+export const getVolume = async (client: Arweave, gql: ArDB, id: string) => {
+  const ticker = await fetchTicker(client, gql, id);
 
   const res = await Order.aggregate()
     .match({
@@ -213,8 +215,8 @@ export const getVolume = async (id: string) => {
   return 0;
 };
 
-export const getVolumeHistory = async (id: string) => {
-  const ticker = await fetchTicker(id);
+export const getVolumeHistory = async (client: Arweave, gql: ArDB, id: string) => {
+  const ticker = await fetchTicker(client, gql, id);
 
   const res = await Order.aggregate()
     .match({

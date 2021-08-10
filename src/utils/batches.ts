@@ -1,3 +1,4 @@
+import ArDB from "ardb";
 import Arweave from "arweave";
 import Contract from "../models/contract";
 import { ContractStats } from "../models/stats";
@@ -50,13 +51,13 @@ export const getTime = () => {
   return parseFloat(new Date().getTime().toString().slice(0, -3));
 };
 
-export const updateBatches = async (client: Arweave) => {
+export const updateBatches = async (client: Arweave, gql: ArDB) => {
   const stats = await ContractStats.findById("__verto__");
   const current = getTime();
 
   if (current - stats.one >= 180) {
     for (const id of await fetchBatch(1)) {
-      const res = await updateContract(client, id);
+      const res = await updateContract(client, gql, id);
       const contract = await Contract.findById(id);
 
       if (res) {
@@ -74,7 +75,7 @@ export const updateBatches = async (client: Arweave) => {
 
   if (current - stats.two >= 540) {
     for (const id of await fetchBatch(2)) {
-      const res = await updateContract(client, id);
+      const res = await updateContract(client, gql, id);
       const contract = await Contract.findById(id);
 
       if (res) {
@@ -92,7 +93,7 @@ export const updateBatches = async (client: Arweave) => {
 
   if (current - stats.three >= 1260) {
     for (const id of await fetchBatch(3)) {
-      const res = await updateContract(client, id);
+      const res = await updateContract(client, gql, id);
       const contract = await Contract.findById(id);
 
       if (res) {

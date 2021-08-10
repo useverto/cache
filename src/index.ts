@@ -43,13 +43,13 @@ const client = new Arweave({
 const gql = new ArDB(client);
 
 const listedContracts = async () => {
-  await fetchListedContracts(client);
+  await fetchListedContracts(client, gql);
   setTimeout(listedContracts, 450000);
 };
 
 const baseContracts = async () => {
-  await updateContract(client, COMMUNITY_CONTRACT);
-  await updateContract(client, INVITE_CONTRACT);
+  await updateContract(client, gql, COMMUNITY_CONTRACT);
+  await updateContract(client, gql, INVITE_CONTRACT);
   setTimeout(baseContracts, 600000);
 };
 
@@ -59,12 +59,12 @@ const posts = async () => {
 };
 
 const orders = async () => {
-  await updateOrders();
+  await updateOrders(client, gql);
   setTimeout(orders, 600000);
 };
 
 const main = async () => {
-  await updateBatches();
+  await updateBatches(client, gql);
   setTimeout(main, 180000);
 };
 
@@ -171,7 +171,7 @@ const router = new Router();
     const id = ctx.params.id;
 
     if (/[a-z0-9_-]{43}/i.test(id)) {
-      await newContract(id);
+      await newContract(client, gql, id);
       ctx.body = "Fetched!";
     } else {
       ctx.body = "Not Found";
@@ -434,9 +434,9 @@ const router = new Router();
       } else if (input === "priceHistory") {
         ctx.body = await getPriceHistory(id);
       } else if (input === "volume") {
-        ctx.body = await getVolume(id);
+        ctx.body = await getVolume(client, gql, id);
       } else if (input === "volumeHistory") {
-        ctx.body = await getVolumeHistory(id);
+        ctx.body = await getVolumeHistory(client, gql, id);
       } else {
         ctx.body = "Not Found";
       }
@@ -625,6 +625,8 @@ const router = new Router();
   router.post("/notification", async (ctx, next) => {
     const data = ctx.request.body;
     await handleNotification(
+      client,
+      gql,
       data.action,
       data.txID,
       data.signature,

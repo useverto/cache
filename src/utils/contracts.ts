@@ -1,16 +1,7 @@
-import ArDB from "ardb";
 import Arweave from "arweave";
 import Contract from "../models/contract";
 import { readContract } from "smartweave";
 import { COMMUNITY_CONTRACT } from "./verto";
-
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
-
-const gql = new ArDB(client);
 
 export const fetchIDs = async () => {
   const res = await Contract.find({}, "_id");
@@ -40,7 +31,7 @@ export const fetchContract = async (id: string, filter: string | undefined) => {
   }
 };
 
-export const updateContract = async (id: string) => {
+export const updateContract = async (client: Arweave, id: string) => {
   const cache = await Contract.findById(id);
   const cachedInteraction = cache.latestInteraction;
   const latestInteraction = await fetchLatestInteraction(id);
@@ -63,7 +54,7 @@ export const updateContract = async (id: string) => {
   }
 };
 
-export const newContract = async (id: string) => {
+export const newContract = async (client: Arweave, id: string) => {
   try {
     const res = await readContract(client, id, undefined, true);
 
@@ -90,7 +81,7 @@ const fetchLatestInteraction = async (id: string) => {
   return latestInteraction;
 };
 
-export const fetchListedContracts = async () => {
+export const fetchListedContracts = async (client: Arweave) => {
   console.log(`\nFetching listed contracts ...`);
   let counter = 0;
 
@@ -108,7 +99,7 @@ export const fetchListedContracts = async () => {
 
   for (const id of ids) {
     if (all.indexOf(id) === -1) {
-      await newContract(id);
+      await newContract(client, id);
       counter++;
     }
   }

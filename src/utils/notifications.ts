@@ -3,21 +3,15 @@ import { GQLEdgeTransactionInterface } from "ardb/lib/faces/gql";
 import Arweave from "arweave";
 import Notification from "../models/notification";
 
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
-
-const gql = new ArDB(client);
-
 export const handleNotification = async (
+  client: Arweave,
+  gql: ArDB,
   action: "create" | "remove",
   txID: string,
   signature: string,
   address: string
 ) => {
-  const key = await addressToPublicKey(address);
+  const key = await addressToPublicKey(gql, address);
 
   const data = client.utils.stringToBuffer(
     JSON.stringify({
@@ -51,7 +45,10 @@ export const handleNotification = async (
   }
 };
 
-const addressToPublicKey = async (address: string): Promise<string> => {
+const addressToPublicKey = async (
+  gql: ArDB,
+  address: string
+): Promise<string> => {
   const res = (await gql
     .search()
     .from(address)

@@ -7,6 +7,8 @@ import body from "koa-body";
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import mongoose from "mongoose";
+import Arweave from "arweave";
+import ArDB from "ardb";
 import {
   fetchContract,
   fetchContracts,
@@ -62,6 +64,14 @@ const cache = new Koa();
 cache.use(body());
 cache.use(cors());
 const router = new Router();
+
+const client = new Arweave({
+  host: "arweave.net",
+  port: 443,
+  protocol: "https",
+});
+
+const gql = new ArDB(client);
 
 (async () => {
   // Connect to database.

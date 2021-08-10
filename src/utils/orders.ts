@@ -7,15 +7,8 @@ import Contract from "../models/contract";
 import { newContract } from "./contracts";
 import { GQLEdgeTransactionInterface } from "ardb/lib/faces/gql";
 
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
 
-const gql = new ArDB(client);
-
-export const updateOrders = async () => {
+export const updateOrders = async (client: Arweave, gql: ArDB) => {
   const stats = await OrderStats.findById("__verto__");
   const height = stats ? stats.height : -1;
   const latestHeight = (await client.network.getInfo()).height;
@@ -26,7 +19,7 @@ export const updateOrders = async () => {
   } else {
     console.log(`\nFetching orders ...`);
 
-    const posts = await getTradingPosts();
+    const posts = await getTradingPosts(client, gql);
 
     // Parse the trades
     const trades = await gql

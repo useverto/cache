@@ -3,14 +3,6 @@ import { GQLEdgeTransactionInterface } from "ardb/lib/faces/gql";
 import Arweave from "arweave";
 import Notification from "../models/notification";
 
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
-
-const gql = new ArDB(client);
-
 export const handleNotification = async (
   action: "create" | "remove",
   txID: string,

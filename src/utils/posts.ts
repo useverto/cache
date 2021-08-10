@@ -4,14 +4,6 @@ import Arweave from "arweave";
 import Contract from "../models/contract";
 import Post from "../models/post";
 
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
-
-const gql = new ArDB(client);
-
 interface VaultInterface {
   [key: string]: {
     balance: number;
@@ -20,7 +12,7 @@ interface VaultInterface {
   }[];
 }
 
-const fetchAddresses = async (): Promise<string[]> => {
+const fetchAddresses = async (gql: ArDB): Promise<string[]> => {
   const res = (await gql
     .search()
     .tag("Exchange", "Verto")
@@ -33,7 +25,7 @@ const fetchAddresses = async (): Promise<string[]> => {
   return [...new Set(addresses)];
 };
 
-const getBalance = async (address: string): Promise<number> => {
+const getBalance = async (client: Arweave, address: string): Promise<number> => {
   const winston = await client.wallets.getBalance(address);
   const ar = client.ar.winstonToAr(winston);
 
@@ -41,6 +33,7 @@ const getBalance = async (address: string): Promise<number> => {
 };
 
 const getStake = async (
+  client: Arweave,
   address: string,
   vault: VaultInterface
 ): Promise<number> => {
@@ -57,6 +50,7 @@ const getStake = async (
 };
 
 const getTime = async (
+  client: Arweave,
   address: string,
   vault: VaultInterface
 ): Promise<number> => {
@@ -74,7 +68,7 @@ const getTime = async (
   return time;
 };
 
-const getEndpoint = async (address: string): Promise<string> => {
+const getEndpoint = async (client: Arweave, gql: ArDB, address: string): Promise<string> => {
   const res = (await gql
     .search()
     .from(address)
@@ -98,8 +92,8 @@ const getEndpoint = async (address: string): Promise<string> => {
   return url + endpoint;
 };
 
-export const fetchPosts = async () => {
-  const addresses = await fetchAddresses();
+export const fetchPosts = async (client: Arweave, gql: ArDB) => {
+  const addresses = await fetchAddresses(gql);
 
   const contract = await Contract.findById(
     "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A",
@@ -108,10 +102,10 @@ export const fetchPosts = async () => {
   const vault: VaultInterface = contract.state.vault;
 
   for (const address of addresses) {
-    const balance = await getBalance(address);
-    const stake = await getStake(address, vault);
-    const time = await getTime(address, vault);
-    const endpoint = await getEndpoint(address);
+    const balance = await getBalance(client, address);
+    const stake = await getStake(client, address, vault);
+    const time = await getTime(client, address, vault);
+    const endpoint = await getEndpoint(client, gql, address);
 
     const post = await Post.findById(address);
     if (post) {

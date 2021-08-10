@@ -1,14 +1,6 @@
-import Arweave from "arweave";
 import ArDB from "ardb";
+import Arweave from "arweave";
 import Contract from "../models/contract";
-
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
-
-const gql = new ArDB(client);
 
 // community contract ID
 export const COMMUNITY_CONTRACT = "t9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE";
@@ -16,7 +8,7 @@ export const COMMUNITY_CONTRACT = "t9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE";
 // invite contract ID
 export const INVITE_CONTRACT = "8X7JO-F6sumwynRXbi5YhXHuqKbGlMLPE6zMOR_rWXc";
 
-export const getTradingPosts = async (): Promise<string[]> => {
+export const getTradingPosts = async (client: Arweave, gql: ArDB): Promise<string[]> => {
   const { state } = await Contract.findById(
     "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A",
     `state.vault`

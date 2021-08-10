@@ -32,7 +32,11 @@ export const fetchContract = async (id: string, filter: string | undefined) => {
   }
 };
 
-export const updateContract = async (client: Arweave, gql: ArDB, id: string) => {
+export const updateContract = async (
+  client: Arweave,
+  gql: ArDB,
+  id: string
+) => {
   const cache = await Contract.findById(id);
   const cachedInteraction = cache.latestInteraction;
   const latestInteraction = await fetchLatestInteraction(client, gql, id);
@@ -70,7 +74,11 @@ export const newContract = async (client: Arweave, gql: ArDB, id: string) => {
   } catch {}
 };
 
-const fetchLatestInteraction = async (client: Arweave, gql: ArDB, id: string) => {
+const fetchLatestInteraction = async (
+  client: Arweave,
+  gql: ArDB,
+  id: string
+) => {
   const res: any = await gql
     .search()
     .max((await client.network.getInfo()).height)

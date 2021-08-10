@@ -215,7 +215,11 @@ export const getVolume = async (client: Arweave, gql: ArDB, id: string) => {
   return 0;
 };
 
-export const getVolumeHistory = async (client: Arweave, gql: ArDB, id: string) => {
+export const getVolumeHistory = async (
+  client: Arweave,
+  gql: ArDB,
+  id: string
+) => {
   const ticker = await fetchTicker(client, gql, id);
 
   const res = await Order.aggregate()

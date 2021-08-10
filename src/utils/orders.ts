@@ -7,7 +7,6 @@ import Contract from "../models/contract";
 import { newContract } from "./contracts";
 import { GQLEdgeTransactionInterface } from "ardb/lib/faces/gql";
 
-
 export const updateOrders = async (client: Arweave, gql: ArDB) => {
   const stats = await OrderStats.findById("__verto__");
   const height = stats ? stats.height : -1;
@@ -108,7 +107,9 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
                 token: chain,
                 input: parseFloat(value),
                 inputUnit: chain,
-                outputUnit: token ? await fetchTicker(client, gql, token) : "AR",
+                outputUnit: token
+                  ? await fetchTicker(client, gql, token)
+                  : "AR",
                 status: "pending",
                 timestamp: node.block.timestamp,
                 actions: [
@@ -375,7 +376,11 @@ export const updateOrders = async (client: Arweave, gql: ArDB) => {
   }
 };
 
-export const fetchTicker = async (client: Arweave, gql: ArDB, id: string): Promise<string> => {
+export const fetchTicker = async (
+  client: Arweave,
+  gql: ArDB,
+  id: string
+): Promise<string> => {
   let contract = await Contract.findById(id, `state.ticker`);
   if (contract) {
     return contract.state.ticker;

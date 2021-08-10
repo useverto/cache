@@ -25,7 +25,10 @@ const fetchAddresses = async (gql: ArDB): Promise<string[]> => {
   return [...new Set(addresses)];
 };
 
-const getBalance = async (client: Arweave, address: string): Promise<number> => {
+const getBalance = async (
+  client: Arweave,
+  address: string
+): Promise<number> => {
   const winston = await client.wallets.getBalance(address);
   const ar = client.ar.winstonToAr(winston);
 
@@ -68,7 +71,11 @@ const getTime = async (
   return time;
 };
 
-const getEndpoint = async (client: Arweave, gql: ArDB, address: string): Promise<string> => {
+const getEndpoint = async (
+  client: Arweave,
+  gql: ArDB,
+  address: string
+): Promise<string> => {
   const res = (await gql
     .search()
     .from(address)

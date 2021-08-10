@@ -4,7 +4,7 @@ import Arweave from "arweave";
 import Notification from "../models/notification";
 
 export const handleNotification = async (
-  client: Arweave, 
+  client: Arweave,
   gql: ArDB,
   action: "create" | "remove",
   txID: string,
@@ -45,7 +45,10 @@ export const handleNotification = async (
   }
 };
 
-const addressToPublicKey = async (gql: ArDB, address: string): Promise<string> => {
+const addressToPublicKey = async (
+  gql: ArDB,
+  address: string
+): Promise<string> => {
   const res = (await gql
     .search()
     .from(address)

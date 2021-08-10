@@ -34,19 +34,27 @@ import Contract from "./models/contract";
 
 import { handleNotification } from "./utils/notifications";
 
+const client = new Arweave({
+  host: "arweave.net",
+  port: 443,
+  protocol: "https",
+});
+
+const gql = new ArDB(client);
+
 const listedContracts = async () => {
-  await fetchListedContracts();
+  await fetchListedContracts(client);
   setTimeout(listedContracts, 450000);
 };
 
 const baseContracts = async () => {
-  await updateContract(COMMUNITY_CONTRACT);
-  await updateContract(INVITE_CONTRACT);
+  await updateContract(client, COMMUNITY_CONTRACT);
+  await updateContract(client, INVITE_CONTRACT);
   setTimeout(baseContracts, 600000);
 };
 
 const posts = async () => {
-  await fetchPosts();
+  await fetchPosts(client, gql);
   setTimeout(posts, 600000);
 };
 
@@ -64,14 +72,6 @@ const cache = new Koa();
 cache.use(body());
 cache.use(cors());
 const router = new Router();
-
-const client = new Arweave({
-  host: "arweave.net",
-  port: 443,
-  protocol: "https",
-});
-
-const gql = new ArDB(client);
 
 (async () => {
   // Connect to database.

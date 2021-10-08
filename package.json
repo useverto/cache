@@ -1,19 +1,22 @@
 {
+  "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/build.js",
+    "start": "npm run build && node dist/index.js",
     "fmt": "prettier --write ."
   },
   "dependencies": {
+    "@google-cloud/storage": "^5.15.0",
     "@koa/cors": "^3.1.0",
     "@koa/router": "^10.0.0",
     "ardb": "^1.0.8",
     "arweave": "^1.10.11",
     "dotenv": "^8.2.0",
+    "esbuild": "^0.13.4",
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",
     "koa-json": "^2.0.2",
     "moment": "^2.29.1",
-    "mongoose": "^5.12.2",
     "smartweave": "^0.4.27"
   },
   "devDependencies": {

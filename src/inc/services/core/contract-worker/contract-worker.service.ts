@@ -27,7 +27,7 @@ export class ContractWorkerService {
 
     private initializeBehaviors() {
         this.workerPool.setOnReceived((contractId, state) => {
-            this.gcpContractStorage.uploadState(contractId, state);
+            this.gcpContractStorage.uploadState(contractId, state, true);
         });
     }
 }

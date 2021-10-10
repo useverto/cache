@@ -8,55 +8,62 @@ export class WorkerPool {
     private workers: Array<Worker> = [];
     private stats: Array<WorkerStats> = [];
     private promises: Array<WorkerResult> = [];
+    private currentContractIdsWorkedOn: Array<string> = [];
 
     constructor(private readonly configuration: WorkerPoolConfiguration) {
         this.initialize();
+        this.setTimers();
     }
 
-    public processContractInWorker(contractId: string, waitForResult: boolean): Promise<any>;
+    public processContractInWorker(contractId: string, waitForResult: true): Promise<true>;
+    public processContractInWorker(contractId: string, waitForResult: true, showResult: boolean): Promise<any>;
     public processContractInWorker(contractId: string): void;
-    public processContractInWorker(contractId: string, waitForResult?: boolean): void | Promise<any> {
-        const { autoScale, contractsPerWorker } = this.configuration;
-        const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker);
-        let workerToUse: number | undefined = undefined;
+    public processContractInWorker(contractId: string, waitForResult?: true, showResult?: true): void | Promise<any> {
+        if(!this.currentContractIdsWorkedOn.some(item => item === contractId)) {
+            const {autoScale, contractsPerWorker} = this.configuration;
+            const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker);
+            let workerToUse: number | undefined = undefined;
 
-        if(!freeWorker) {
-            if(autoScale) {
-                workerToUse = this.createWorker();
-            } else {
-                this.contractsQueue.push(contractId);
-            }
-        } else {
-            workerToUse = freeWorker.workerId;
-        }
-
-        if(workerToUse) {
-            const stat = this.updateStats(workerToUse, (localStats) => {
-                return {
-                    ...localStats,
-                    contractsOnProcessing: localStats.contractsOnProcessing + 1
+            if (!freeWorker) {
+                if (autoScale) {
+                    workerToUse = this.createWorker(true);
+                } else {
+                    this.contractsQueue.push(contractId);
                 }
-            });
-            if(stat) {
-                this.workers[stat.workerId].postMessage({
-                    contractId
-                });
+            } else {
+                workerToUse = freeWorker.workerId;
+            }
 
-                if(waitForResult) {
-                    let resolver, catcher;
-                    let promiseWorker = new Promise((_resolve, _reject) => {
-                        resolver = _resolve;
-                        catcher = _reject;
-                    })
-                    this.promises.push({
-                        promise: promiseWorker,
-                        resolver,
-                        catcher,
+            if (workerToUse >= 0) {
+                const stat = this.updateStats(workerToUse, (localStats) => {
+                    return {
+                        ...localStats,
+                        contractsOnProcessing: localStats.contractsOnProcessing + 1
+                    }
+                });
+                if (stat) {
+                    this.workers[stat.workerId].postMessage({
                         contractId
                     });
-                    return promiseWorker;
+                    this.currentContractIdsWorkedOn.push(contractId);
                 }
             }
+        }
+
+        if(waitForResult) {
+            let resolver, catcher;
+            let promiseWorker = new Promise((_resolve, _reject) => {
+                resolver = _resolve;
+                catcher = _reject;
+            })
+            this.promises.push({
+                promise: promiseWorker,
+                resolver,
+                catcher,
+                contractId,
+                showResult
+            });
+            return promiseWorker;
         }
     }
 
@@ -64,7 +71,7 @@ export class WorkerPool {
         return this.workers;
     }
 
-    private createWorker(): number {
+    private createWorker(workerScaled = false): number {
         const worker = new Worker(
             path.join(__dirname, "./worker-scripts/worker-contract-execution.js"),
             {
@@ -73,12 +80,14 @@ export class WorkerPool {
         );
 
         // @ts-ignore
-        const workerId = this.workers.push(undefined);
+        // .push returns one number higher than the index
+        const workerId = this.workers.push(undefined) - 1;
 
         this.workers[workerId] = this.initializeBehaviors(worker, workerId);
         this.stats.push({
             workerId,
-            contractsOnProcessing: 0
+            contractsOnProcessing: 0,
+            workerScaled
         });
         return workerId;
     }
@@ -93,11 +102,11 @@ export class WorkerPool {
             }
         });
 
-        const resolvePromises = (contractId: string, isError: boolean) => {
+        const resolvePromises = (contractId: string, state: any, isError: boolean) => {
             const result = this.promises.find((item) => item.contractId === contractId);
             if(result) {
                 if (!isError) {
-                    result.resolver(true);
+                    result.resolver(result.showResult ? state : true);
                 } else {
                     result.catcher(false);
                 }
@@ -113,10 +122,11 @@ export class WorkerPool {
             const state = data.state;
 
             decreaseContractsOnProcessing();
-            resolvePromises(contractId, type === 'error');
+            resolvePromises(contractId, state, type === 'error');
         });
 
         worker.addEventListener("error", (error) => {
+            console.log(error);
             decreaseContractsOnProcessing();
         });
 
@@ -134,6 +144,35 @@ export class WorkerPool {
             }
         }
         return stat >= 0 ? this.stats[stat] : undefined;
+    }
+
+    private setTimers(): void {
+        setInterval(() => {
+            this.deleteScaledWorkers();
+        }, 60000);
+
+        setInterval(() => {
+            this.processQueue();
+        }, 60000);
+    }
+
+    private deleteScaledWorkers(): void {
+        const scaledWorkers = this.stats.filter(stat => stat.workerScaled && stat.contractsOnProcessing <= 0);
+        scaledWorkers.forEach(({ workerId }) => {
+            this.workers[workerId].terminate();
+            this.workers.splice(workerId, 1);
+        });
+        this.stats = this.stats.filter(stat => !stat.workerScaled);
+    }
+
+    private processQueue(): void {
+        const temporaryList = [...this.contractsQueue];
+        temporaryList.forEach(
+            (contractId) => {
+                this.contractsQueue = this.contractsQueue.filter(item => item !== contractId);
+                this.processContractInWorker(contractId);
+            }
+        );
     }
 
     private initialize() {

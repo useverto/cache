@@ -9,8 +9,10 @@ export interface WorkerPoolConfiguration {
 export interface WorkerStats {
     workerId: number;
     contractsOnProcessing: number;
+    workerScaled: boolean;
 }
 
 export interface WorkerResult extends PromiseContext {
     contractId: string;
+    showResult: boolean;
 }

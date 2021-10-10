@@ -6,6 +6,7 @@ const contractService = new ContractService(arweaveClientService);
 
 addEventListener('message', async e => {
     const {contractId} = e.data;
+    console.log(`Processing ${contractId}`);
     try {
         const state = await contractService.processState(contractId);
         // @ts-ignore

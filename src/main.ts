@@ -10,11 +10,9 @@ async function bootstrap() {
 }
 
 bootstrap();
-
+//
 // import {WorkerPool} from "./inc/worker-pool/worker-pool";
 // import * as dotenv from "dotenv";
-// import {ArweaveClientService} from "./inc/services/core/arweave/arweave-client.service";
-// import {ContractService} from "./inc/services/contracts/contract.service";
 //
 // dotenv.config();
 // const workerPool = new WorkerPool({
@@ -22,10 +20,6 @@ bootstrap();
 //   contractsPerWorker: 1,
 //   autoScale: true
 // });
-//
-//
-// const arweaveClientService = new ArweaveClientService();
-// const contractService = new ContractService(arweaveClientService);
 //
 // function clock(start?: any) {
 //   if ( !start ) return process.hrtime();
@@ -62,19 +56,25 @@ bootstrap();
 //       "Cu0FeGOQXmVFOfP4Fbpqdvy2dccDKlxi42ZFbGdCheA",
 //       "sMLPiVKQ8xMLJU7M1PUiH-8v_f0-0sBzkS6foLJoV_M",
 //       "I_aAD4xbx2L_DUlC6mp_WOJ8buASDxbg3_9MMTyKTro",
-//       "B0s8KIzeOqZxLO8l8aTPMRfxAn-WjwSyP_2qy0bUZTY"];
+//       "B0s8KIzeOqZxLO8l8aTPMRfxAn-WjwSyP_2qy0bUZTY"
+//     ];
 //
 // const startLength = contracts.length;
+// const promises = [];
 //
 // var start = clock();
+//
 // for(const contract of contracts) {
-//   workerPool.processContractInWorker(contract);
+//   promises.push(workerPool.processContractInWorker(contract, true));
 // }
 //
-// Promise.allSettled(workerPool.promises.map(item => item.promise)).then((results) => {
+// Promise.allSettled(promises).then((results) => {
 //     var duration = clock(start);
 //     const fulfilled = results.filter(item => item.status === 'fulfilled').length;
 //     console.log(`Took ${duration}ms for ${fulfilled}/${startLength}`);
+//     results.forEach((item) => {
+//       console.log(item);
+//     })
 // })
 //
 // // var start = clock();

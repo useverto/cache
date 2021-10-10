@@ -2,6 +2,8 @@ import {WorkerPoolConfiguration, WorkerResult, WorkerStats} from "./model";
 import Worker from 'web-worker';
 import path from "path";
 
+export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
+
 export class WorkerPool {
 
     private contractsQueue: Array<string> = [];
@@ -10,15 +12,17 @@ export class WorkerPool {
     private promises: Array<WorkerResult> = [];
     private currentContractIdsWorkedOn: Array<string> = [];
 
+    private onReceived: OnReceived;
+
     constructor(private readonly configuration: WorkerPoolConfiguration) {
         this.initialize();
         this.setTimers();
     }
 
-    public processContractInWorker(contractId: string, waitForResult: true): Promise<true>;
-    public processContractInWorker(contractId: string, waitForResult: true, showResult: boolean): Promise<any>;
+    public processContractInWorker(contractId: string, waitForResult: boolean): Promise<true>;
+    public processContractInWorker(contractId: string, waitForResult: boolean, showResult: boolean): Promise<any>;
     public processContractInWorker(contractId: string): void;
-    public processContractInWorker(contractId: string, waitForResult?: true, showResult?: true): void | Promise<any> {
+    public processContractInWorker(contractId: string, waitForResult?: boolean, showResult?: boolean): void | Promise<any> {
         if(!this.currentContractIdsWorkedOn.some(item => item === contractId)) {
             const {autoScale, contractsPerWorker} = this.configuration;
             const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker);
@@ -69,6 +73,10 @@ export class WorkerPool {
         }
     }
 
+    public setOnReceived(callback: OnReceived): void {
+        this.onReceived = callback;
+    }
+
     public getWorkers(): Array<Worker> {
         return this.workers;
     }
@@ -104,17 +112,21 @@ export class WorkerPool {
             }
         });
 
-        const resolvePromises = (contractId: string, state: any, isError: boolean) => {
+        const resolvePromises = (contractId: string, data: any, isError: boolean) => {
             const result = this.promises.find((item) => item.contractId === contractId);
             if(result) {
                 if (!isError) {
-                    result.resolver(result.showResult ? state : true);
+                    result.resolver(result.showResult ? data.state : true);
                 } else {
-                    result.catcher(false);
+                    result.catcher(data.ex);
                 }
 
                 this.promises = this.promises.filter((item) => item.contractId !== contractId);
             }
+        }
+
+        const removeContractLock = (contractId: string) => {
+            this.currentContractIdsWorkedOn = this.currentContractIdsWorkedOn.filter(contract => contract !== contractId);
         }
 
         worker.addEventListener('message', e => {
@@ -124,11 +136,17 @@ export class WorkerPool {
             const state = data.state;
 
             decreaseContractsOnProcessing();
-            resolvePromises(contractId, state, type === 'error');
+            removeContractLock(contractId);
+
+            if(this.onReceived && type === 'result') {
+                this.onReceived(contractId, state);
+            }
+
+            resolvePromises(contractId, data, type === 'error');
         });
 
         worker.addEventListener("error", (error) => {
-            console.log(error);
+            console.log("Error in worker", error);
             decreaseContractsOnProcessing();
         });
 

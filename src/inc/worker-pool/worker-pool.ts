@@ -48,6 +48,8 @@ export class WorkerPool {
                     this.currentContractIdsWorkedOn.push(contractId);
                 }
             }
+        } else {
+            this.contractsQueue.push(contractId);
         }
 
         if(waitForResult) {

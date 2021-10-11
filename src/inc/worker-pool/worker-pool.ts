@@ -1,4 +1,4 @@
-import {WorkerPoolConfiguration, WorkerResult, WorkerStats} from "./model";
+import {WorkerPoolConfiguration, WorkerProcessPostResult, WorkerResult, WorkerStats} from "./model";
 import Worker from 'web-worker';
 import path from "path";
 
@@ -19,10 +19,13 @@ export class WorkerPool {
         this.setTimers();
     }
 
-    public processContractInWorker(contractId: string, waitForResult: boolean): Promise<true>;
-    public processContractInWorker(contractId: string, waitForResult: boolean, showResult: boolean): Promise<any>;
-    public processContractInWorker(contractId: string): void;
-    public processContractInWorker(contractId: string, waitForResult?: boolean, showResult?: boolean): void | Promise<any> {
+    public processContractInWorker(contractId: string, waitForResult: boolean): WorkerProcessPostResult;
+    public processContractInWorker(contractId: string, waitForResult: boolean, showResult: boolean): WorkerProcessPostResult;
+    public processContractInWorker(contractId: string): WorkerProcessPostResult;
+    public processContractInWorker(contractId: string, waitForResult?: boolean, showResult?: boolean): WorkerProcessPostResult {
+        // @ts-ignore
+        let returnData: WorkerProcessPostResult = {};
+
         if(!this.currentContractIdsWorkedOn.some(item => item === contractId)) {
             const {autoScale, contractsPerWorker} = this.configuration;
             const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker);
@@ -33,44 +36,32 @@ export class WorkerPool {
                     workerToUse = this.createWorker(true);
                 } else {
                     this.contractsQueue.push(contractId);
+                    returnData.state = 'ADDED_TO_QUEUE';
                 }
             } else {
                 workerToUse = freeWorker.workerId;
             }
 
             if (workerToUse >= 0) {
-                const stat = this.updateStats(workerToUse, (localStats) => {
-                    return {
-                        ...localStats,
-                        contractsOnProcessing: localStats.contractsOnProcessing + 1
-                    }
-                });
-                if (stat) {
-                    this.workers[stat.workerId].postMessage({
-                        contractId
-                    });
-                    this.currentContractIdsWorkedOn.push(contractId);
-                }
+                this.sendContractToWorker(contractId, workerToUse);
+                returnData.state = 'CONTRACT_SENT';
+            }
+
+            if(waitForResult) {
+                const promiseForResult = this.createPromiseResultContext(contractId, showResult);
+                this.promises.push(promiseForResult);
+                returnData.data = {
+                    worker: workerToUse,
+                    contractId,
+                    promiseContext: promiseForResult
+                };
             }
         } else {
             this.contractsQueue.push(contractId);
+            returnData.state = 'CURRENTLY_PROCESSING';
         }
 
-        if(waitForResult) {
-            let resolver, catcher;
-            let promiseWorker = new Promise((_resolve, _reject) => {
-                resolver = _resolve;
-                catcher = _reject;
-            })
-            this.promises.push({
-                promise: promiseWorker,
-                resolver,
-                catcher,
-                contractId,
-                showResult
-            });
-            return promiseWorker;
-        }
+        return returnData;
     }
 
     public setOnReceived(callback: OnReceived): void {
@@ -100,6 +91,36 @@ export class WorkerPool {
             workerScaled
         });
         return workerId;
+    }
+
+    private sendContractToWorker(contractId: string, workerToUse: number) {
+        const stat = this.updateStats(workerToUse, (localStats) => {
+            return {
+                ...localStats,
+                contractsOnProcessing: localStats.contractsOnProcessing + 1
+            }
+        });
+        if (stat) {
+            this.workers[stat.workerId].postMessage({
+                contractId
+            });
+            this.currentContractIdsWorkedOn.push(contractId);
+        }
+    }
+
+    private createPromiseResultContext(contractId: string, showResult: boolean) {
+        let resolver, catcher;
+        let promiseWorker = new Promise((_resolve, _reject) => {
+            resolver = _resolve;
+            catcher = _reject;
+        })
+        return {
+            promise: promiseWorker,
+            resolver,
+            catcher,
+            contractId,
+            showResult
+        };
     }
 
     private initializeBehaviors(worker: Worker, workerId: number) {

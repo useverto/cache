@@ -28,7 +28,7 @@ export class GcpDatastoreService {
         }
     }
 
-    saveFull<T = any>(entity: EntityBuilder<T>) {
+    saveFull<T = any>(entity: EntityBuilder<Partial<T>>) {
         const key = this.createKey(entity.kind, entity.id);
         const savedEntity = this.buildEntity(key, entity.data);
         return this.save(savedEntity);

@@ -2,6 +2,8 @@ import {Injectable} from "@nestjs/common";
 import {WorkerPool} from "../../../worker-pool/worker-pool";
 import {GcpContractStorageService} from "../gcp-contract-storage/gcp-contract-storage.service";
 import {GcpDatastoreService} from "../gcp-datastore/gcp-datastore.service";
+import {ContractsDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts";
+import {DatastoreKinds} from "../gcp-datastore/model";
 
 @Injectable()
 export class ContractWorkerService {
@@ -30,6 +32,20 @@ export class ContractWorkerService {
     private initializeBehaviors() {
         this.workerPool.setOnReceived((contractId, state) => {
             this.gcpContractStorage.uploadState(contractId, state, true);
+            this.gcpDatastoreService.saveFull<ContractsDatastore>({
+                kind: DatastoreKinds.CONTRACTS,
+                id: contractId,
+                data: {
+                    contractId,
+                    updated: new Date().getTime(),
+                    ticker: state?.ticker,
+                    name: state?.name,
+                    title: state?.title,
+                    description: state?.description,
+                    owner: state?.owner,
+                    allowMinting: state?.allowMinting
+                }
+            })
         });
     }
 }

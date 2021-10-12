@@ -18,7 +18,7 @@ export class GcpStorageService {
     }
 
     async bucketExists(bucketName: string) {
-        const bucketExists = await this.storageInstance.bucket(bucketName).exists();
+        const bucketExists = await this.getBucket(bucketName).exists();
         return bucketExists[0];
     }
 
@@ -39,6 +39,10 @@ export class GcpStorageService {
         } else {
             return undefined;
         }
+    }
+
+    getBucket(bucketName: string) {
+        return this.storageInstance.bucket(bucketName);
     }
 
 

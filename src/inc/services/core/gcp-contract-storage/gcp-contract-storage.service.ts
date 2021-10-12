@@ -7,7 +7,7 @@ export class GcpContractStorageService {
     private readonly PARENT_BUCKET_NAME: string = 'verto-exchange-contracts';
 
     constructor(private readonly gcpStorage: GcpStorageService) {
-        this.gcpStorage.createBucketIfNotExists(this.PARENT_BUCKET_NAME);
+        this.initializeParentBucket();
     }
 
     async uploadState(contractId: string, state: any, validityFile: boolean = false) {
@@ -25,6 +25,24 @@ export class GcpContractStorageService {
         }
 
         return [fileUpload];
+    }
+
+    async initializeParentBucket() {
+        await this.gcpStorage.createBucketIfNotExists(this.PARENT_BUCKET_NAME);
+        await this.gcpStorage.getBucket(this.PARENT_BUCKET_NAME).setCorsConfiguration([
+            {
+                "origin": [
+                    "*"
+                ],
+                "method": [
+                    "*"
+                ],
+                "responseHeader": [
+                    "*"
+                ],
+                "maxAgeSeconds": 3600
+            }
+        ]);
     }
 
 }

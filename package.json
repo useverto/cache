@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@google-cloud/datastore": "^6.5.0",
     "@google-cloud/storage": "^5.15.0",
     "@nestjs/common": "^8.0.6",
     "@nestjs/config": "^1.0.2",

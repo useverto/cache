@@ -1,13 +1,15 @@
 import {Injectable} from "@nestjs/common";
 import {WorkerPool} from "../../../worker-pool/worker-pool";
 import {GcpContractStorageService} from "../gcp-contract-storage/gcp-contract-storage.service";
+import {GcpDatastoreService} from "../gcp-datastore/gcp-datastore.service";
 
 @Injectable()
 export class ContractWorkerService {
 
     private workerPool: WorkerPool;
 
-    constructor(private readonly gcpContractStorage: GcpContractStorageService) {
+    constructor(private readonly gcpContractStorage: GcpContractStorageService,
+                private readonly gcpDatastoreService: GcpDatastoreService) {
         this.initializeWorker();
         this.initializeBehaviors();
     }

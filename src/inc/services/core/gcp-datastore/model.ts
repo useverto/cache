@@ -1,7 +1,9 @@
 import {entity} from "@google-cloud/datastore/build/src/entity";
 
 export enum DatastoreKinds {
-    CONTRACTS = "CONTRACTS"
+    CONTRACTS = "CONTRACTS",
+    COMMUNITY_TOKENS = "COMMUNITY_TOKENS",
+    COMMUNITY_PEOPLE = "COMMUNITY_PEOPLE"
 }
 
 export type DatastoreEntities = entity.Key | Array<entity.Key>;

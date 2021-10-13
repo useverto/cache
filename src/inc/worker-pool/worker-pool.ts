@@ -1,6 +1,7 @@
 import {WorkerPoolConfiguration, WorkerProcessPostResult, WorkerResult, WorkerStats} from "./model";
 import Worker from 'web-worker';
 import path from "path";
+import {Constants} from "../constants";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
 
@@ -12,7 +13,9 @@ export class WorkerPool {
     private promises: Array<WorkerResult> = [];
     private currentContractIdsWorkedOn: Array<string> = [];
 
-    private onReceived: OnReceived;
+    private globalOnReceived: OnReceived;
+
+    private receivers: Map<string, OnReceived> = new Map<string, OnReceived>();
 
     constructor(private readonly configuration: WorkerPoolConfiguration) {
         this.initialize();
@@ -65,7 +68,15 @@ export class WorkerPool {
     }
 
     public setOnReceived(callback: OnReceived): void {
-        this.onReceived = callback;
+        this.globalOnReceived = callback;
+    }
+
+    public setReceiver(contractId: string, cb: OnReceived): void {
+        this.receivers.set(contractId, cb);
+    }
+
+    public removeReceiver(contractId: string): void {
+        this.receivers.delete(contractId);
     }
 
     public getWorkers(): Array<Worker> {
@@ -159,11 +170,18 @@ export class WorkerPool {
             decreaseContractsOnProcessing();
             removeContractLock(contractId);
 
-            if(this.onReceived && type === 'result') {
-                this.onReceived(contractId, state);
+            const isError = type === 'error';
+
+            if(this.globalOnReceived && !isError) {
+                this.globalOnReceived(contractId, state);
             }
 
-            resolvePromises(contractId, data, type === 'error');
+            if(this.receivers.has(contractId) && !isError) {
+                const receiver: OnReceived = this.receivers.get(contractId);
+                receiver(contractId, state);
+            }
+
+            resolvePromises(contractId, data, isError);
         });
 
         worker.addEventListener("error", (error) => {
@@ -195,6 +213,10 @@ export class WorkerPool {
         setInterval(() => {
             this.processQueue();
         }, 60000);
+
+        setInterval(() => {
+            this.processContractInWorker(Constants.COMMUNITY_CONTRACT);
+        }, 30 * 60000);
     }
 
     private deleteScaledWorkers(): void {

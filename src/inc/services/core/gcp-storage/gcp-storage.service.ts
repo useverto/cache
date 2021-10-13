@@ -8,6 +8,7 @@ import {FileSaveInfo} from "./model";
 export class GcpStorageService {
 
     private readonly storageInstance: Storage;
+    private readonly decoder: TextDecoder = new TextDecoder();
 
     constructor() {
         const credentials = GcpCredentials.getCredentials();
@@ -39,6 +40,20 @@ export class GcpStorageService {
         } else {
             return undefined;
         }
+    }
+
+    getFile(bucketName: string, fileName: string) {
+        return this.getBucket(bucketName).file(fileName);
+    }
+
+    async fetchFileContent(bucketName: string, fileName: string) {
+        return this.decoder.decode(
+            (await this.getBucket(bucketName).file(fileName).download())[0]
+        );
+    }
+
+    async fetchFile(bucketName: string, fileName: string) {
+        return this.getFile(bucketName, fileName).get();
     }
 
     getBucket(bucketName: string) {

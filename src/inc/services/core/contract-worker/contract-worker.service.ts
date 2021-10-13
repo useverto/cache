@@ -36,6 +36,7 @@ export class ContractWorkerService {
     private initializeBehaviors() {
         this.workerPool.setOnReceived((contractId, state) => {
             this.gcpContractStorage.uploadState(contractId, state, true);
+            this.gcpContractStorage.uploadAddress(contractId, state);
             this.gcpDatastoreService.saveFull<ContractsDatastore>({
                 kind: DatastoreKinds.CONTRACTS,
                 id: contractId,
@@ -75,7 +76,7 @@ export class ContractWorkerService {
                         const users: Array<any> = state.people;
                         users.forEach((item) => {
                             this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
-                                kind: DatastoreKinds.COMMUNITY_TOKENS,
+                                kind: DatastoreKinds.COMMUNITY_PEOPLE,
                                 id: item.username,
                                 data: {
                                     username: item.username,

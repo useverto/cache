@@ -1,8 +1,11 @@
 import {Injectable} from "@nestjs/common";
-import {Datastore} from "@google-cloud/datastore";
+import {Datastore, Query} from "@google-cloud/datastore";
 import {GcpCredentials} from "../../../gcp-credentials/gcp-credentials";
 import {DatastoreEntities, DatastoreEntity, DatastoreKinds, EntityBuilder} from "./model";
 import {entity} from "@google-cloud/datastore/build/src/entity";
+import {google} from "@google-cloud/datastore/build/protos/protos";
+import Filter = google.datastore.v1.Filter;
+import {RunQueryOptions} from "@google-cloud/datastore/build/src/query";
 
 @Injectable()
 export class GcpDatastoreService {
@@ -40,6 +43,15 @@ export class GcpDatastoreService {
 
     get(key: DatastoreEntities) {
         return this.datastoreInstance.get(key);
+    }
+
+    query(kind: DatastoreKinds, processor: (query: Query) => Query, options?: RunQueryOptions) {
+        let query = this.datastoreInstance.createQuery(kind);
+        if(processor) {
+            query = processor(query);
+        }
+
+        return this.datastoreInstance.runQuery(query, options);
     }
 
 }

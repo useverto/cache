@@ -7,6 +7,7 @@ import {DatastoreKinds} from "../gcp-datastore/model";
 import {Constants} from "../../../constants";
 import {CommunityTokensDatastore} from "../gcp-datastore/kind-interfaces/ds-community-tokens";
 import {CommunityPeopleDatastore} from "../gcp-datastore/kind-interfaces/ds-community-people";
+import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts-vs-address";
 
 @Injectable()
 export class ContractWorkerService {
@@ -36,7 +37,7 @@ export class ContractWorkerService {
     private initializeBehaviors() {
         this.workerPool.setOnReceived((contractId, state) => {
             this.gcpContractStorage.uploadState(contractId, state, true);
-            this.gcpContractStorage.uploadAddress(contractId, state);
+            this.uploadAddress(contractId, state);
             this.gcpDatastoreService.saveFull<ContractsDatastore>({
                 kind: DatastoreKinds.CONTRACTS,
                 id: contractId,
@@ -51,6 +52,20 @@ export class ContractWorkerService {
                     allowMinting: state?.allowMinting
                 }
             });
+        });
+    }
+
+    private async uploadAddress(contractId: string, state: any) {
+        const balances: Array<string> | undefined = Object.keys(state?.state?.balances);
+        balances?.map(async (addressId) => {
+            this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
+                kind: DatastoreKinds.CONTRACTS_VS_ADDRESS,
+                id: `${contractId}-${addressId}`,
+                data: {
+                    contract: contractId,
+                    address: addressId
+                }
+            })
         });
     }
 

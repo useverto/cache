@@ -25,6 +25,10 @@ export class ContractWorkerService {
         return this.workerPool.processContractInWorker(contractId, waitForResult, showResult);
     }
 
+    public hardSendContract(contractId: string) {
+        this.workerPool.hardProcessContract(contractId);
+    }
+
     private initializeWorker() {
         const autoScale = process.env["WORKER_POOL_AUTOSCALE"];
         this.workerPool = new WorkerPool({
@@ -56,23 +60,30 @@ export class ContractWorkerService {
     }
 
     private async uploadAddress(contractId: string, state: any) {
-        const balances: Array<string> | undefined = Object.keys(state?.state?.balances);
-        balances?.map(async (addressId) => {
-            this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
-                kind: DatastoreKinds.CONTRACTS_VS_ADDRESS,
-                id: `${contractId}-${addressId}`,
-                data: {
-                    contract: contractId,
-                    address: addressId
-                }
-            })
-        });
+        const balancesInState = state?.state?.balances;
+        if(balancesInState) {
+            const balances: Array<string> | undefined = Object.keys(balancesInState);
+            balances?.map(async (addressId) => {
+                this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
+                    kind: DatastoreKinds.CONTRACTS_VS_ADDRESS,
+                    id: `${contractId}-${addressId}`,
+                    data: {
+                        contract: contractId,
+                        address: addressId
+                    }
+                })
+            });
+        }
     }
 
     private initializeCommunityContractHandler() {
         this.workerPool.setReceiver(Constants.COMMUNITY_CONTRACT,
-            (contractId: string, state: any) => {
-                if(state) {
+            (contractId: string, parentState: any) => {
+                if(parentState) {
+                    let state = parentState.state;
+                    if(!state) {
+                        return;
+                    }
                     if(state.tokens) {
                         const tokens: Array<any> = state.tokens;
                         tokens.forEach((item) => {

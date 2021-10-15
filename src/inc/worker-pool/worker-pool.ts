@@ -1,7 +1,6 @@
 import {WorkerPoolConfiguration, WorkerProcessPostResult, WorkerResult, WorkerStats} from "./model";
 import Worker from 'web-worker';
 import path from "path";
-import {Constants} from "../constants";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
 
@@ -65,6 +64,11 @@ export class WorkerPool {
         }
 
         return returnData;
+    }
+
+    public hardProcessContract(contractId: string) {
+        const worker = this.createWorker(true);
+        this.sendContractToWorker(contractId, worker);
     }
 
     public setOnReceived(callback: OnReceived): void {
@@ -174,6 +178,7 @@ export class WorkerPool {
 
             if(this.globalOnReceived && !isError) {
                 this.globalOnReceived(contractId, state);
+                console.log(`Global handler for ${contractId} has been invoked`);
             }
 
             if(this.receivers.has(contractId) && !isError) {
@@ -213,10 +218,6 @@ export class WorkerPool {
         setInterval(() => {
             this.processQueue();
         }, 60000);
-
-        setInterval(() => {
-            this.processContractInWorker(Constants.COMMUNITY_CONTRACT);
-        }, 30 * 60000);
     }
 
     private deleteScaledWorkers(): void {

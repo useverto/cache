@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import {ContractModule} from "./modules/contracts/contract.module";
 import {CommonModule} from "./modules/commons/common.module";
 import {WorkerPoolModule} from "./modules/workerpool/worker-pool.module";
+import {SitesModule} from "./modules/sites/sites.module";
 
 
 @Module({
@@ -10,7 +11,8 @@ import {WorkerPoolModule} from "./modules/workerpool/worker-pool.module";
       ConfigModule.forRoot(),
       CommonModule,
       ContractModule,
-      WorkerPoolModule
+      WorkerPoolModule,
+      SitesModule
   ],
   controllers: [],
   providers: [],

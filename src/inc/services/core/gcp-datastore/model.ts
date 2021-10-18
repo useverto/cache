@@ -1,4 +1,5 @@
 import {entity} from "@google-cloud/datastore/build/src/entity";
+import {Operator} from "@google-cloud/datastore/build/src/query";
 
 export enum DatastoreKinds {
     CONTRACTS = "CONTRACTS",
@@ -18,4 +19,25 @@ export interface EntityBuilder<T = any> {
     kind: DatastoreKinds,
     id: string,
     data: T;
+}
+
+export interface QueryableFilter {
+    property: string;
+    operator: Operator;
+    value: any;
+}
+
+export interface QueryableBase {
+    limit?: number;
+    offset?: number;
+    filters?: Array<QueryableFilter>;
+}
+
+export interface Queryable extends QueryableBase {
+    kind: DatastoreKinds;
+}
+
+export interface QueryResult<T = any> {
+    entities: Array<T>;
+    resultsStatus: string;
 }

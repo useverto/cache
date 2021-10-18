@@ -1,6 +1,8 @@
 import {Controller, Get, Param, Query} from "@nestjs/common";
 import {TokensDatastoreService} from "../../inc/services/contracts-datastore/tokens-datastore.service";
 import {ArtFilter, CollectionsFilter} from "../../inc/services/contracts-datastore/common-filters/token-filters";
+import {QueryResult} from "../../inc/services/core/gcp-datastore/model";
+import {CommunityTokensDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-community-tokens";
 
 @Controller('token')
 export class SiteController {
@@ -14,17 +16,31 @@ export class SiteController {
     }
 
     @Get('artwork/random')
-    public async getRandomArtwork(@Query('limit') limit: string) {
+    public async getRandomArtwork(@Query('limit') limit: string): Promise<QueryResult<CommunityTokensDatastore>> {
         let intLimit = parseInt(limit || '4');
         intLimit = intLimit > 10 ? 10 : intLimit;
 
-        return await this.tokensDatastoreService.queryTokens({
+        const art = await this.tokensDatastoreService.queryTokens({
             limit: intLimit,
             filters: [
-                ArtFilter,
+                ArtFilter
+            ]
+        });
+
+        const collection = await this.tokensDatastoreService.queryTokens({
+            limit: intLimit,
+            filters: [
                 CollectionsFilter
             ]
         });
+
+        return {
+            entities: [
+                ...art.entities,
+                ...collection.entities
+            ].sort(() => Math.random() - Math.random()).slice(0, intLimit),
+            resultsStatus: 'FOUND'
+        }
     }
 
 }

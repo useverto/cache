@@ -2,6 +2,8 @@ import {Controller, Param, Post, Query, UseGuards} from "@nestjs/common";
 import {ContractService} from "../../inc/services/contracts/contract.service";
 import {ContractWorkerService} from "../../inc/services/core/contract-worker/contract-worker.service";
 import {OnlyDevGuard} from "../commons/guards/only-dev.guard";
+import {WorkerProcessPostResult} from "../../inc/worker-pool/model";
+import {ContractResult} from "../../inc/common.model";
 
 @Controller('contracts')
 export class ContractController {
@@ -11,13 +13,13 @@ export class ContractController {
     }
 
     @Post('save/:id')
-    async saveContract(@Param('id') id: string) {
+    saveContract(@Param('id') id: string): WorkerProcessPostResult {
         return this.contractWorkerService.sendContractToWorkerPool(id);
     }
 
     @Post('execute/:id')
     @UseGuards(OnlyDevGuard)
-    async processContract(@Param('id') id: string) {
+    async processContract(@Param('id') id: string): Promise<ContractResult> {
         return this.executeContract(id);
     }
 

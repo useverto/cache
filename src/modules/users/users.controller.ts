@@ -8,7 +8,7 @@ export class UsersController {
     }
 
     @Get('contracts/:addressId')
-    public async getContractsForUser(@Param('addressId') id: string) {
+    public async getContractsForUser(@Param('addressId') id: string): Promise<Array<string>> {
         const queryContractsInUser = await this.contractsAddressDatastoreService.queryContractsAddress(
             {
                 filters: [{

@@ -11,7 +11,7 @@ export class WorkerPoolController {
     }
 
     @Post('execute-community-contract')
-    async processQueue() {
+    processQueue(): void {
         this.contractWorkerService.hardSendContract(Constants.COMMUNITY_CONTRACT);
     }
 

@@ -44,13 +44,13 @@ export class WorkerPool {
                 workerToUse = freeWorker.workerId;
             }
 
-            if (workerToUse >= 0) {
+            if (workerToUse && workerToUse >= 0) {
                 this.sendContractToWorker(contractId, workerToUse);
                 returnData.state = 'CONTRACT_SENT';
             }
 
             if(waitForResult) {
-                const promiseForResult = this.createPromiseResultContext(contractId, showResult);
+                const promiseForResult = this.createPromiseResultContext(contractId, showResult || false);
                 this.promises.push(promiseForResult);
                 returnData.data = {
                     worker: workerToUse,
@@ -66,7 +66,7 @@ export class WorkerPool {
         return returnData;
     }
 
-    public hardProcessContract(contractId: string) {
+    public hardProcessContract(contractId: string): void {
         const worker = this.createWorker(true);
         this.sendContractToWorker(contractId, worker);
     }
@@ -108,7 +108,7 @@ export class WorkerPool {
         return workerId;
     }
 
-    private sendContractToWorker(contractId: string, workerToUse: number) {
+    private sendContractToWorker(contractId: string, workerToUse: number): void {
         const stat = this.updateStats(workerToUse, (localStats) => {
             return {
                 ...localStats,
@@ -123,7 +123,7 @@ export class WorkerPool {
         }
     }
 
-    private createPromiseResultContext(contractId: string, showResult: boolean) {
+    private createPromiseResultContext(contractId: string, showResult: boolean): WorkerResult {
         let resolver, catcher;
         let promiseWorker = new Promise((_resolve, _reject) => {
             resolver = _resolve;
@@ -131,14 +131,14 @@ export class WorkerPool {
         })
         return {
             promise: promiseWorker,
-            resolver,
-            catcher,
+            resolver: (resolver)!,
+            catcher: (catcher)!,
             contractId,
             showResult
         };
     }
 
-    private initializeBehaviors(worker: Worker, workerId: number) {
+    private initializeBehaviors(worker: Worker, workerId: number): Worker {
 
         const decreaseContractsOnProcessing = () => this.updateStats(workerId, (localStats) => {
             const contractsOnProcessing = localStats.contractsOnProcessing;
@@ -182,7 +182,7 @@ export class WorkerPool {
             }
 
             if(this.receivers.has(contractId) && !isError) {
-                const receiver: OnReceived = this.receivers.get(contractId);
+                const receiver: OnReceived = this.receivers.get(contractId)!;
                 receiver(contractId, state);
             }
 
@@ -197,7 +197,7 @@ export class WorkerPool {
         return worker;
     }
 
-    private updateStats(workerId: number, processor: (stats: WorkerStats) => WorkerStats) {
+    private updateStats(workerId: number, processor: (stats: WorkerStats) => WorkerStats): WorkerStats | undefined {
         const stat = this.stats.findIndex((item) => item.workerId === workerId);
         if(stat >= 0) {
             const statState = this.stats[stat];
@@ -239,7 +239,7 @@ export class WorkerPool {
         );
     }
 
-    private initialize() {
+    private initialize(): void {
         const { size } = this.configuration;
         for(let i = 0; i<=size; i++) {
             this.createWorker();

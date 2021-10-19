@@ -14,7 +14,7 @@ export class ArweaveClientService {
         });
     }
 
-    getClient() {
+    getClient(): Arweave {
         return this.client;
     }
 }

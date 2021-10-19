@@ -11,8 +11,8 @@ export class SiteController {
     }
 
     @Get('metadata/:id')
-    public async getTokenType(@Param('id') id: string) {
-        return await this.tokensDatastoreService.getToken(id);
+    public async getTokenType(@Param('id') id: string): Promise<CommunityTokensDatastore | undefined> {
+        return this.tokensDatastoreService.getToken(id);
     }
 
     @Get('artwork/random')

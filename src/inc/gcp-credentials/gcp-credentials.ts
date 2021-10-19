@@ -1,8 +1,9 @@
 import {GcpCredentialsBuilder} from "./gcp-credentials-builder";
+import {GcpCredentialsProvider} from "./models";
 
 export class GcpCredentials {
 
-    public static getCredentials = () => GcpCredentialsBuilder.getBuilder()
+    public static getCredentials = (): GcpCredentialsProvider => GcpCredentialsBuilder.getBuilder()
         .setType(process.env["GCP_TYPE"]!)
         .setProjectId(process.env["GCP_PROJECT_ID"]!)
         .setPrivateKeyId(process.env["GCP_PRIVATE_KEY_ID"]!)

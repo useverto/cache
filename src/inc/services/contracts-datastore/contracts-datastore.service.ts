@@ -4,6 +4,8 @@ import {ContractsDatastore} from "../core/gcp-datastore/kind-interfaces/ds-contr
 import {DatastoreKinds} from "../core/gcp-datastore/model";
 import {CommunityPeopleDatastore} from "../core/gcp-datastore/kind-interfaces/ds-community-people";
 import {Query} from "@google-cloud/datastore";
+import {google} from "@google-cloud/datastore/build/protos/protos";
+import {RunQueryResponse} from "@google-cloud/datastore/build/src/query";
 
 @Injectable()
 export class ContractsDatastoreService {
@@ -23,9 +25,8 @@ export class ContractsDatastoreService {
         );
     }
 
-    async queryTokens(query: (query: Query) => Query) {
-        return await this.gcpDatastoreService.query(DatastoreKinds.COMMUNITY_TOKENS, query);
+    async queryTokens(query: (query: Query) => Query): Promise<RunQueryResponse> {
+        return this.gcpDatastoreService.query(DatastoreKinds.COMMUNITY_TOKENS, query);
     }
-
 
 }

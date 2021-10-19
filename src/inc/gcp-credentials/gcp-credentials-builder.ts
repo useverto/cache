@@ -78,7 +78,7 @@ export class GcpCredentialsBuilder {
         }
     }
 
-    static getBuilder() {
+    static getBuilder(): GcpCredentialsBuilder {
         return new GcpCredentialsBuilder();
     }
 

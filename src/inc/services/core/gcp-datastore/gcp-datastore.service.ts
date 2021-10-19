@@ -3,7 +3,9 @@ import {Datastore, Query} from "@google-cloud/datastore";
 import {GcpCredentials} from "../../../gcp-credentials/gcp-credentials";
 import {DatastoreEntities, DatastoreEntity, DatastoreKinds, EntityBuilder, Queryable, QueryResult} from "./model";
 import {entity} from "@google-cloud/datastore/build/src/entity";
-import {RunQueryOptions} from "@google-cloud/datastore/build/src/query";
+import {RunQueryOptions, RunQueryResponse} from "@google-cloud/datastore/build/src/query";
+import {google} from "@google-cloud/datastore/build/protos/protos";
+import {GetResponse, SaveResponse} from "@google-cloud/datastore/build/src/request";
 
 @Injectable()
 export class GcpDatastoreService {
@@ -18,7 +20,7 @@ export class GcpDatastoreService {
         });
     }
 
-    createKey(kind: DatastoreKinds, id: any) {
+    createKey(kind: DatastoreKinds, id: any): entity.Key {
         return this.datastoreInstance.key([kind, id]);
     }
 
@@ -29,26 +31,26 @@ export class GcpDatastoreService {
         }
     }
 
-    saveFull<T = any>(entity: EntityBuilder<Partial<T>>) {
+    saveFull<T = any>(entity: EntityBuilder<Partial<T>>): Promise<SaveResponse> {
         const key = this.createKey(entity.kind, entity.id);
         const savedEntity = this.buildEntity(key, entity.data);
         return this.save(savedEntity);
     }
 
-    save<T = any>(entity: Array<DatastoreEntity<T>> | DatastoreEntity<T>) {
+    save<T = any>(entity: Array<DatastoreEntity<T>> | DatastoreEntity<T>): Promise<SaveResponse> {
         return this.datastoreInstance.save(entity);
     }
 
-    get(key: DatastoreEntities) {
+    get(key: DatastoreEntities): Promise<GetResponse> {
         return this.datastoreInstance.get(key);
     }
 
-    async getSingle(key: entity.Key) {
+    async getSingle<T = any>(key: entity.Key): Promise<T | undefined> {
         const data = await this.get(key);
         return data?.length > 0 ? data[0] : undefined;
     }
 
-    query(kind: DatastoreKinds, processor: (query: Query) => Query, options?: RunQueryOptions) {
+    query(kind: DatastoreKinds, processor: (query: Query) => Query, options?: RunQueryOptions): Promise<RunQueryResponse> {
         let query = this.datastoreInstance.createQuery(kind);
         if(processor) {
             query = processor(query);

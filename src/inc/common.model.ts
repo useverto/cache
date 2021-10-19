@@ -7,6 +7,6 @@ export interface ContractResult<T = any> {
 
 export interface PromiseContext {
     promise: any;
-    resolver: (data: any) => void;
-    catcher: (data: any) => void;
+    resolver: (data: unknown) => void;
+    catcher: (data: unknown) => void;
 }

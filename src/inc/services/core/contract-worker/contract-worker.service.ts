@@ -8,6 +8,7 @@ import {Constants} from "../../../constants";
 import {CommunityTokensDatastore} from "../gcp-datastore/kind-interfaces/ds-community-tokens";
 import {CommunityPeopleDatastore} from "../gcp-datastore/kind-interfaces/ds-community-people";
 import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts-vs-address";
+import {WorkerProcessPostResult} from "../../../worker-pool/model";
 
 @Injectable()
 export class ContractWorkerService {
@@ -21,24 +22,24 @@ export class ContractWorkerService {
         this.initializeCommunityContractHandler();
     }
 
-    public sendContractToWorkerPool(contractId: string, waitForResult?: boolean, showResult?: boolean) {
-        return this.workerPool.processContractInWorker(contractId, waitForResult, showResult);
+    public sendContractToWorkerPool(contractId: string, waitForResult?: boolean, showResult?: boolean): WorkerProcessPostResult {
+        return this.workerPool.processContractInWorker(contractId, waitForResult || false, showResult || false);
     }
 
-    public hardSendContract(contractId: string) {
+    public hardSendContract(contractId: string): void {
         this.workerPool.hardProcessContract(contractId);
     }
 
-    private initializeWorker() {
+    private initializeWorker(): void {
         const autoScale = process.env["WORKER_POOL_AUTOSCALE"];
         this.workerPool = new WorkerPool({
             autoScale: autoScale === 'true' || (autoScale as any) === true,
-            size: parseInt(process.env["WORKER_POOL_SIZE"]),
-            contractsPerWorker: parseInt(process.env["WORKER_CONTRACTS_PER_WORKER"])
+            size: parseInt(process.env["WORKER_POOL_SIZE"]!),
+            contractsPerWorker: parseInt(process.env["WORKER_CONTRACTS_PER_WORKER"]!)
         });
     }
 
-    private initializeBehaviors() {
+    private initializeBehaviors(): void {
         this.workerPool.setOnReceived((contractId, state) => {
             this.gcpContractStorage.uploadState(contractId, state, true);
             this.uploadAddress(contractId, state);
@@ -59,7 +60,7 @@ export class ContractWorkerService {
         });
     }
 
-    private async uploadAddress(contractId: string, state: any) {
+    private async uploadAddress(contractId: string, state: any): Promise<void> {
         const balancesInState = state?.state?.balances;
         if(balancesInState) {
             const balances: Array<string> | undefined = Object.keys(balancesInState);
@@ -76,7 +77,7 @@ export class ContractWorkerService {
         }
     }
 
-    private initializeCommunityContractHandler() {
+    private initializeCommunityContractHandler(): void {
         this.workerPool.setReceiver(Constants.COMMUNITY_CONTRACT,
             (contractId: string, parentState: any) => {
                 if(parentState) {

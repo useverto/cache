@@ -12,7 +12,7 @@ export class GcpContractStorageService {
         this.initializeParentBucket(this.PARENT_ADDRESS_BUCKET_NAME);
     }
 
-    async uploadState(contractId: string, state: any, validityFile: boolean = false) {
+    async uploadState(contractId: string, state: any, validityFile: boolean = false): Promise<Promise<void>[]> {
         const fileUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
             fileName: `${contractId}/${contractId}_state.json`,
             fileContent: JSON.stringify(validityFile ? state["state"] : state, null, 2)
@@ -29,7 +29,7 @@ export class GcpContractStorageService {
         return [fileUpload];
     }
 
-    async initializeParentBucket(bucketName: string) {
+    async initializeParentBucket(bucketName: string): Promise<void> {
         await this.gcpStorage.createBucketIfNotExists(bucketName);
         await this.gcpStorage.getBucket(bucketName).setCorsConfiguration([
             {

@@ -78,7 +78,10 @@ export class GcpDatastoreService {
         const data = await this.datastoreInstance.runQuery(gdQuery) || [];
         return {
             entities: data[0] || [],
-            resultsStatus: (data[1] || {}).moreResults || 'NO_RESULTS'
+            resultsStatus: (data[1] || {}).moreResults || 'NO_RESULTS',
+            isEmpty: function() {
+                return this.resultsStatus === 'NO_RESULTS'
+            }
         }
     }
 

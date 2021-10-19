@@ -37,7 +37,11 @@ export interface Queryable extends QueryableBase {
     kind: DatastoreKinds;
 }
 
-export interface QueryResult<T = any> {
+export interface QueryResultBase<T = any> {
     entities: Array<T>;
     resultsStatus: string;
+}
+
+export interface QueryResult<T = any> extends QueryResultBase<T> {
+    isEmpty: () => boolean
 }

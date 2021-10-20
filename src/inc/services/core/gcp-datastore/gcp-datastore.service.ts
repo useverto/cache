@@ -4,9 +4,11 @@ import {GcpCredentials} from "../../../gcp-credentials/gcp-credentials";
 import {DatastoreEntities, DatastoreEntity, DatastoreKinds, EntityBuilder, Queryable, QueryResult} from "./model";
 import {entity} from "@google-cloud/datastore/build/src/entity";
 import {RunQueryOptions, RunQueryResponse} from "@google-cloud/datastore/build/src/query";
-import {google} from "@google-cloud/datastore/build/protos/protos";
 import {GetResponse, SaveResponse} from "@google-cloud/datastore/build/src/request";
 
+/**
+ * This service is responsible for interacting with Datastore on a common basis.
+ */
 @Injectable()
 export class GcpDatastoreService {
 
@@ -20,10 +22,20 @@ export class GcpDatastoreService {
         });
     }
 
+    /**
+     * Creates a {@link entity.key} to be used by google datastore.
+     * @param kind Kind of the datastore information
+     * @param id to be contained by the datastore row
+     */
     createKey(kind: DatastoreKinds, id: any): entity.Key {
         return this.datastoreInstance.key([kind, id]);
     }
 
+    /**
+     * Builds an entity based on a key and a data.
+     * @param key
+     * @param data
+     */
     buildEntity<T = any>(key: entity.Key, data: T): DatastoreEntity<T> {
         return {
             key,
@@ -31,25 +43,47 @@ export class GcpDatastoreService {
         }
     }
 
+    /**
+     * Saves ane entity based on {@link EntityBuilder}
+     * @param entity
+     */
     saveFull<T = any>(entity: EntityBuilder<Partial<T>>): Promise<SaveResponse> {
         const key = this.createKey(entity.kind, entity.id);
         const savedEntity = this.buildEntity(key, entity.data);
         return this.save(savedEntity);
     }
 
+    /**
+     * Saves one or multiple entities based on {@link DatastoreEntity}
+     * @param entity
+     */
     save<T = any>(entity: Array<DatastoreEntity<T>> | DatastoreEntity<T>): Promise<SaveResponse> {
         return this.datastoreInstance.save(entity);
     }
 
+    /**
+     * Tries to get an entity or multiple entities from google datastore
+     * @param key
+     */
     get(key: DatastoreEntities): Promise<GetResponse> {
         return this.datastoreInstance.get(key);
     }
 
+    /**
+     * Gets a single entity from datastore.
+     * @param key
+     */
     async getSingle<T = any>(key: entity.Key): Promise<T | undefined> {
         const data = await this.get(key);
         return data?.length > 0 ? data[0] : undefined;
     }
 
+    /**
+     * Query datastore based on a kind, a processor and options. Returns {@link RunQueryResponse} from datastore.
+     * @param kind Kind of datastore to be queried
+     * @param processor a query builder that modifies the main query. Useful to add filters, orders, etc.
+     * @param options Options to be held by the query at execution
+     */
     query(kind: DatastoreKinds, processor: (query: Query) => Query, options?: RunQueryOptions): Promise<RunQueryResponse> {
         let query = this.datastoreInstance.createQuery(kind);
         if(processor) {
@@ -59,6 +93,10 @@ export class GcpDatastoreService {
         return this.datastoreInstance.runQuery(query, options);
     }
 
+    /**
+     * Creates a query based on {@link Queryable} which works as a helper for filters, limit, offset.
+     * @param query Structure of query
+     */
     async invokeQuery<T = any>(query: Queryable): Promise<QueryResult<T>> {
         let gdQuery = this.datastoreInstance.createQuery(query.kind);
         const { limit, offset, filters } = query;

@@ -1,6 +1,9 @@
 import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
+/**
+ * This service interacts with the logic behind caching our contracts inside the Google CDN
+ */
 @Injectable()
 export class GcpContractStorageService {
 
@@ -12,6 +15,12 @@ export class GcpContractStorageService {
         this.initializeParentBucket(this.PARENT_ADDRESS_BUCKET_NAME);
     }
 
+    /**
+     * Uploads the state of a contract to the Google CDN
+     * @param contractId contract id of the state to be uploaded
+     * @param state state of the contract
+     * @param validityFile whether to upload the validity (in a separate file)
+     */
     async uploadState(contractId: string, state: any, validityFile: boolean = false): Promise<Promise<void>[]> {
         const fileUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
             fileName: `${contractId}/${contractId}_state.json`,
@@ -29,6 +38,9 @@ export class GcpContractStorageService {
         return [fileUpload];
     }
 
+    /**
+     * Creates the parent bucket where contracts are stored and sets a CORS configuration of public
+     */
     async initializeParentBucket(bucketName: string): Promise<void> {
         await this.gcpStorage.createBucketIfNotExists(bucketName);
         await this.gcpStorage.getBucket(bucketName).setCorsConfiguration([

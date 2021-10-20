@@ -10,6 +10,10 @@ import {CommunityPeopleDatastore} from "../gcp-datastore/kind-interfaces/ds-comm
 import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts-vs-address";
 import {WorkerProcessPostResult} from "../../../worker-pool/model";
 
+/**
+ * This service represents the interaction between contracts and the worker pool.
+ * This service is responsible for initializing common behaviors as well as interacting with the worker pool.
+ */
 @Injectable()
 export class ContractWorkerService {
 
@@ -22,14 +26,27 @@ export class ContractWorkerService {
         this.initializeCommunityContractHandler();
     }
 
+    /**
+     * Sends a contract to the worker pool
+     * @param contractId Contract ID to be evaluated inside the worker pool
+     * @param waitForResult Whether the result of the contract should be waited
+     * @param showResult Whether the result of the contract should be returned in the promise
+     */
     public sendContractToWorkerPool(contractId: string, waitForResult?: boolean, showResult?: boolean): WorkerProcessPostResult {
         return this.workerPool.processContractInWorker(contractId, waitForResult || false, showResult || false);
     }
 
+    /**
+     * Creates a new dedicated worker only for {@param contractId} to be processed.
+     * @param contractId
+     */
     public hardSendContract(contractId: string): void {
         this.workerPool.hardProcessContract(contractId);
     }
 
+    /**
+     * Initializes the worker pool based on environmental configuration
+     */
     private initializeWorker(): void {
         const autoScale = process.env["WORKER_POOL_AUTOSCALE"];
         this.workerPool = new WorkerPool({
@@ -39,6 +56,13 @@ export class ContractWorkerService {
         });
     }
 
+    /**
+     * Injects behaviors to be executed every time a contract is evaluated
+     * Such as: Uploading the state to the google cdn,
+     *          uploading the contract address and relation with the holders
+     *          Saving the metadata of the contract
+     *
+     */
     private initializeBehaviors(): void {
         this.workerPool.setOnReceived((contractId, state) => {
             this.gcpContractStorage.uploadState(contractId, state, true);
@@ -60,6 +84,9 @@ export class ContractWorkerService {
         });
     }
 
+    /**
+     * Saves the relation between an address found in the balances of the contract, and the contract.
+     */
     private async uploadAddress(contractId: string, state: any): Promise<void> {
         const balancesInState = state?.state?.balances;
         if(balancesInState) {
@@ -77,6 +104,10 @@ export class ContractWorkerService {
         }
     }
 
+    /**
+     * Executes behaviors for community contract processing. Such as storing the tokens that are present in the community contracts
+     * And storing the usernames and addresses.
+     */
     private initializeCommunityContractHandler(): void {
         this.workerPool.setReceiver(Constants.COMMUNITY_CONTRACT,
             (contractId: string, parentState: any) => {

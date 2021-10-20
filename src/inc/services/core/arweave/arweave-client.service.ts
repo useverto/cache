@@ -1,6 +1,9 @@
 import Arweave from "arweave";
 import {Injectable} from "@nestjs/common";
 
+/**
+ * This class is responsible for creating and injecting the arweave client.
+ */
 @Injectable()
 export class ArweaveClientService {
 
@@ -14,6 +17,9 @@ export class ArweaveClientService {
         });
     }
 
+    /**
+     * Current arweave client
+     */
     getClient(): Arweave {
         return this.client;
     }

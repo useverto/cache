@@ -3,6 +3,9 @@ import {GcpCredentialsProvider} from "./models";
 
 export class GcpCredentials {
 
+    /**
+     * Gets and builds JSON credential for google cloud services from environmental flags.
+     */
     public static getCredentials = (): GcpCredentialsProvider => GcpCredentialsBuilder.getBuilder()
         .setType(process.env["GCP_TYPE"]!)
         .setProjectId(process.env["GCP_PROJECT_ID"]!)

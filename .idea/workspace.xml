@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e69d67f0-d77d-494b-ada3-8660db940280" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/inc/services/contracts-datastore/users-datastore.service.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/modules/users/user.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/modules/users/user.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/modules/users/users.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/modules/users/users.controller.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +108,7 @@
       <workItem from="1634666876476" duration="13000" />
       <workItem from="1634666917605" duration="52000" />
       <workItem from="1634666985917" duration="13000" />
-      <workItem from="1634667038551" duration="10173000" />
+      <workItem from="1634667038551" duration="16075000" />
     </task>
     <servers />
   </component>

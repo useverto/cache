@@ -3,18 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e69d67f0-d77d-494b-ada3-8660db940280" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/gcp-credentials/gcp-credentials-builder.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/gcp-credentials/gcp-credentials-builder.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/gcp-credentials/gcp-credentials.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/gcp-credentials/gcp-credentials.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/contracts-datastore/contracts-address-datastore.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/contracts-datastore/contracts-address-datastore.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/contracts-datastore/contracts-datastore.service.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/contracts-datastore/tokens-datastore.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/contracts-datastore/tokens-datastore.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/contracts/contract.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/contracts/contract.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/core/arweave/arweave-client.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/core/arweave/arweave-client.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/core/contract-worker/contract-worker.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/core/contract-worker/contract-worker.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/core/gcp-contract-storage/gcp-contract-storage.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/core/gcp-contract-storage/gcp-contract-storage.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/core/gcp-datastore/gcp-datastore.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/core/gcp-datastore/gcp-datastore.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/services/core/gcp-storage/gcp-storage.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/services/core/gcp-storage/gcp-storage.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/inc/worker-pool/worker-pool.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/inc/worker-pool/worker-pool.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,7 +106,7 @@
       <workItem from="1634666876476" duration="13000" />
       <workItem from="1634666917605" duration="52000" />
       <workItem from="1634666985917" duration="13000" />
-      <workItem from="1634667038551" duration="8935000" />
+      <workItem from="1634667038551" duration="10173000" />
     </task>
     <servers />
   </component>

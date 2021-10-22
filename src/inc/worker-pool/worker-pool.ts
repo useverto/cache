@@ -296,8 +296,11 @@ export class WorkerPool {
     private deleteScaledWorkers(): void {
         const scaledWorkers = this.stats.filter(stat => stat.workerScaled && stat.contractsOnProcessing <= 0);
         scaledWorkers.forEach(({ workerId }) => {
-            this.workers[workerId].terminate();
-            this.workers.splice(workerId, 1);
+            const worker = this.workers[workerId];
+            if(worker != undefined) {
+                this.workers[workerId].terminate();
+                this.workers.splice(workerId, 1);
+            }
         });
         this.stats = this.stats.filter(stat => !stat.workerScaled);
     }

@@ -25,3 +25,5 @@ steps:
       - 'STATUS=${_STATUS}'
   - name: 'gcr.io/cloud-builders/gcloud'
     args: [ 'app', 'deploy', 'app.yaml']
+options:
+  logging: CLOUD_LOGGING_ONLY

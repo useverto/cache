@@ -23,6 +23,9 @@ steps:
       - 'WORKER_CONTRACTS_PER_WORKER=${_WORKER_CONTRACTS_PER_WORKER}'
       - 'INTERNAL_ENDPOINT_PASSWORD=${_INTERNAL_ENDPOINT_PASSWORD}'
       - 'STATUS=${_STATUS}'
+  - name: 'node'
+    entrypoint: 'npm'
+    args: ['install', '-g', '@nestjs/cli']
   - name: 'gcr.io/cloud-builders/gcloud'
     args: [ 'app', 'deploy', 'app.yaml']
 options:

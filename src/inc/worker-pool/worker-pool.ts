@@ -55,7 +55,7 @@ export class WorkerPool {
                 workerToUse = freeWorker.workerId;
             }
 
-            if (workerToUse && workerToUse >= 0) {
+            if (workerToUse != undefined && workerToUse >= 0) {
                 this.sendContractToWorker(contractId, workerToUse);
                 returnData.state = 'CONTRACT_SENT';
             }

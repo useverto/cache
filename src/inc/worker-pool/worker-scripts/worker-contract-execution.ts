@@ -17,6 +17,7 @@ addEventListener('message', async e => {
         });
         console.log(`Execution for ${contractId} has finished`);
     } catch(ex) {
+        console.error(`Exception caught for ${contractId}`);
         // @ts-ignore
         postMessage({
             contractId,

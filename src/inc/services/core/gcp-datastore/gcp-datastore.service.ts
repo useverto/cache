@@ -12,14 +12,10 @@ import {GetResponse, SaveResponse} from "@google-cloud/datastore/build/src/reque
 @Injectable()
 export class GcpDatastoreService {
 
-    private readonly datastoreInstance: Datastore;
+    private datastoreInstance: Datastore;
 
     constructor() {
-        const credentials = GcpCredentials.getCredentials();
-        this.datastoreInstance = new Datastore({
-            projectId: credentials.project_id,
-            credentials
-        });
+        this.renewConnection();
     }
 
     /**
@@ -58,7 +54,13 @@ export class GcpDatastoreService {
      * @param entity
      */
     save<T = any>(entity: Array<DatastoreEntity<T>> | DatastoreEntity<T>): Promise<SaveResponse> {
-        return this.datastoreInstance.save(entity);
+        const save = () => this.datastoreInstance.save(entity);
+        try {
+            return save();
+        } catch (e) {
+            this.renewConnection();
+            return save();
+        }
     }
 
     /**
@@ -66,7 +68,13 @@ export class GcpDatastoreService {
      * @param key
      */
     get(key: DatastoreEntities): Promise<GetResponse> {
-        return this.datastoreInstance.get(key);
+        const getItem = () => this.datastoreInstance.get(key);
+        try {
+            return getItem();
+        } catch (e) {
+            this.renewConnection();
+            return getItem();
+        }
     }
 
     /**
@@ -90,7 +98,14 @@ export class GcpDatastoreService {
             query = processor(query);
         }
 
-        return this.datastoreInstance.runQuery(query, options);
+        const runQuery = () => this.datastoreInstance.runQuery(query, options);
+
+        try {
+            return runQuery();
+        } catch {
+            this.renewConnection();
+            return runQuery();
+        }
     }
 
     /**
@@ -115,7 +130,7 @@ export class GcpDatastoreService {
             });
         }
 
-        const data = await this.datastoreInstance.runQuery(gdQuery) || [];
+        const data = await this.query(query.kind, (query) => gdQuery) || [];
         return {
             entities: data[0] || [],
             resultsStatus: (data[1] || {}).moreResults || 'NO_RESULTS',
@@ -123,6 +138,14 @@ export class GcpDatastoreService {
                 return this.resultsStatus === 'NO_RESULTS'
             }
         }
+    }
+
+    private renewConnection(): void {
+        const credentials = GcpCredentials.getCredentials();
+        this.datastoreInstance = new Datastore({
+            projectId: credentials.project_id,
+            credentials
+        });
     }
 
 }

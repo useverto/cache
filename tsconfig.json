@@ -1,9 +1,18 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "outDir": "dist",
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
-    "downlevelIteration": true
-  },
-  "files": ["src/index.ts"]
+    "strictNullChecks": true,
+    "noImplicitAny": true
+  }
 }

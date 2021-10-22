@@ -11,15 +11,11 @@ import {GetResponse} from "@google-cloud/common/build/src/service-object";
 @Injectable()
 export class GcpStorageService {
 
-    private readonly storageInstance: Storage;
+    private storageInstance: Storage;
     private readonly decoder: TextDecoder = new TextDecoder();
 
     constructor() {
-        const credentials = GcpCredentials.getCredentials();
-        this.storageInstance = new Storage({
-            projectId: credentials.project_id,
-            credentials
-        });
+        this.initializeStorage();
     }
 
     /**
@@ -55,11 +51,19 @@ export class GcpStorageService {
      * @param bucketName
      * @param fileSaveInfo
      */
-    async uploadFile(bucketName: string, fileSaveInfo: FileSaveInfo): Promise<void> {
-        const bucketExists = await this.bucketExists(bucketName);
-        if(bucketExists) {
-            const file = this.storageInstance.bucket(bucketName).file(fileSaveInfo.fileName);
-            return file.save(fileSaveInfo.fileContent, fileSaveInfo.options);
+    async uploadFile(bucketName: string, fileSaveInfo: FileSaveInfo, retry?: number): Promise<void> {
+        try {
+            const bucketExists = await this.bucketExists(bucketName);
+            if (bucketExists) {
+                const file = this.storageInstance.bucket(bucketName).file(fileSaveInfo.fileName);
+                return file.save(fileSaveInfo.fileContent, fileSaveInfo.options);
+            }
+        } catch(e) {
+            if(!retry || retry <= 0) {
+                this.initializeStorage();
+                await this.uploadFile(bucketName, fileSaveInfo, 1);
+            }
+            console.error(e);
         }
     }
 
@@ -98,6 +102,14 @@ export class GcpStorageService {
      */
     getBucket(bucketName: string): Bucket {
         return this.storageInstance.bucket(bucketName);
+    }
+
+    private initializeStorage(): void {
+        const credentials = GcpCredentials.getCredentials();
+        this.storageInstance = new Storage({
+            projectId: credentials.project_id,
+            credentials
+        });
     }
 
 

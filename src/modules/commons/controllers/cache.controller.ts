@@ -7,7 +7,7 @@ export class CacheController {
     public getStatus() {
         return {
             status: 'Online',
-            revision: process.env["K_REVISION"],
+            revision: process.env["REV"],
             port: process.env["PORT"]
         }
     }

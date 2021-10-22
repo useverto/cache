@@ -23,6 +23,7 @@ steps:
       - 'WORKER_CONTRACTS_PER_WORKER=${_WORKER_CONTRACTS_PER_WORKER}'
       - 'INTERNAL_ENDPOINT_PASSWORD=${_INTERNAL_ENDPOINT_PASSWORD}'
       - 'STATUS=${_STATUS}'
+      - 'REV=$REVISION_ID'
   - name: 'node'
     entrypoint: 'npm'
     args: ['install', '-g', '@nestjs/cli']

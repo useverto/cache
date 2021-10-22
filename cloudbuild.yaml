@@ -1,0 +1,27 @@
+steps:
+  - name: 'node'
+    entrypoint: 'npm'
+    args: ['install']
+  - name: 'node'
+    entrypoint: 'npm'
+    args: ['run', 'create-env']
+    env:
+      - 'GCP_TYPE=${_GCP_TYPE}'
+      - 'GCP_PROJECT_ID=${_GCP_PROJECT_ID}'
+      - 'GCP_PRIVATE_KEY_ID=${_GCP_PRIVATE_KEY_ID}'
+      - 'GCP_PRIVATE_KEY=${_GCP_PRIVATE_KEY}'
+      - 'GCP_EMAIL=${_GCP_EMAIL}'
+      - 'GCP_CLIENT_ID=${_GCP_CLIENT_ID}'
+      - 'GCP_AUTH_URI=${_GCP_AUTH_URI}'
+      - 'GCP_TOKEN_URI=${_GCP_TOKEN_URI}'
+      - 'GCP_CERT_PROVIDER=${_GCP_CERT_PROVIDER}'
+      - 'GCP_CERT_URL=${_GCP_CERT_URL}'
+      - 'ARWEAVE_SERVER=${_ARWEAVE_SERVER}'
+      - 'ARWEAVE_PORT=${_ARWEAVE_PORT}'
+      - 'WORKER_POOL_AUTOSCALE=${_WORKER_POOL_AUTOSCALE}'
+      - 'WORKER_POOL_SIZE=${_WORKER_POOL_SIZE}'
+      - 'WORKER_CONTRACTS_PER_WORKER=${_WORKER_CONTRACTS_PER_WORKER}'
+      - 'INTERNAL_ENDPOINT_PASSWORD=${_INTERNAL_ENDPOINT_PASSWORD}'
+      - 'STATUS=${_STATUS}'
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [ 'app', 'deploy', 'app.yaml']

@@ -1,8 +1,18 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "outDir": "dist",
-    "esModuleInterop": true
-  },
-  "files": ["src/contract.ts", "src/index.ts"]
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true
+  }
 }

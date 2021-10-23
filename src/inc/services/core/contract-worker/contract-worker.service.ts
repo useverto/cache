@@ -67,18 +67,19 @@ export class ContractWorkerService {
         this.workerPool.setOnReceived((contractId, state) => {
             this.gcpContractStorage.uploadState(contractId, state, true);
             this.uploadAddress(contractId, state);
+            const realState = state?.state;
             this.gcpDatastoreService.saveFull<ContractsDatastore>({
                 kind: DatastoreKinds.CONTRACTS,
                 id: contractId,
                 data: {
                     contractId,
                     updated: new Date().getTime(),
-                    ticker: state?.ticker,
-                    name: state?.name,
-                    title: state?.title,
-                    description: state?.description,
-                    owner: state?.owner,
-                    allowMinting: state?.allowMinting
+                    ticker: realState?.ticker,
+                    name: realState?.name,
+                    title: realState?.title,
+                    description: realState?.description,
+                    owner: realState?.owner,
+                    allowMinting: realState?.allowMinting
                 }
             });
         });

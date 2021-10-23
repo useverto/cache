@@ -6,7 +6,9 @@ export class CacheController {
     @Get('ping')
     public getStatus() {
         return {
-            status: 'Online'
+            status: 'Online',
+            revision: process.env["REV"],
+            port: process.env["PORT"]
         }
     }
 

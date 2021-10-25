@@ -12,6 +12,11 @@ export interface WorkerStats {
     workerScaled: boolean;
 }
 
+export interface WorkerItem {
+    worker: Worker;
+    id: number;
+}
+
 export interface WorkerResult extends PromiseContext {
     contractId: string;
     showResult: boolean;

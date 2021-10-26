@@ -22,20 +22,24 @@ export class GcpContractStorageService {
      * @param validityFile whether to upload the validity (in a separate file)
      */
     async uploadState(contractId: string, state: any, validityFile: boolean = false): Promise<Promise<void>[]> {
-        const fileUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
-            fileName: `${contractId}/${contractId}_state.json`,
-            fileContent: JSON.stringify(validityFile ? state["state"] : state, null, 2)
-        });
-
-        if(validityFile) {
-            const validityUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
-                fileName: `${contractId}/${contractId}_validity.json`,
-                fileContent: JSON.stringify(state.validity, null, 2)
+        try {
+            const fileUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                fileName: `${contractId}/${contractId}_state.json`,
+                fileContent: JSON.stringify(validityFile ? state["state"] : state, null, 2)
             });
-            return [fileUpload, validityUpload];
-        }
 
-        return [fileUpload];
+            if (validityFile) {
+                const validityUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                    fileName: `${contractId}/${contractId}_validity.json`,
+                    fileContent: JSON.stringify(state.validity, null, 2)
+                });
+                return [fileUpload, validityUpload];
+            }
+
+            return [fileUpload];
+        } catch {
+            return [];
+        }
     }
 
     /**

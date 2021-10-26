@@ -93,14 +93,19 @@ export class ContractWorkerService {
         if(balancesInState) {
             const balances: Array<string> | undefined = Object.keys(balancesInState);
             balances?.map(async (addressId) => {
-                this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
-                    kind: DatastoreKinds.CONTRACTS_VS_ADDRESS,
-                    id: `${contractId}-${addressId}`,
-                    data: {
-                        contract: contractId,
-                        address: addressId
-                    }
-                })
+                const kind = DatastoreKinds.CONTRACTS_VS_ADDRESS;
+                const key = `${contractId}-${addressId}`;
+                const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(kind, key));
+                if(!getSingle) {
+                    this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
+                        kind: kind,
+                        id: key,
+                        data: {
+                            contract: contractId,
+                            address: addressId
+                        }
+                    });
+                }
             });
         }
     }
@@ -133,15 +138,22 @@ export class ContractWorkerService {
                     }
                     if(state.people) {
                         const users: Array<any> = state.people;
-                        users.forEach((item) => {
-                            this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
-                                kind: DatastoreKinds.COMMUNITY_PEOPLE,
-                                id: item.username,
-                                data: {
-                                    username: item.username,
-                                    addresses: (item.addresses as string[]).join(",")
-                                }
-                            });
+                        users.forEach(async (item) => {
+                            const kind = DatastoreKinds.COMMUNITY_PEOPLE;
+                            const id = item.username;
+                            const addresses = ((item.addresses || []) as string[]).join(",");
+
+                            const getSingle = await this.gcpDatastoreService.getSingle<CommunityPeopleDatastore>(this.gcpDatastoreService.createKey(kind, id));
+                            if(getSingle && getSingle.addresses !== addresses) {
+                                this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
+                                    kind: kind,
+                                    id: id,
+                                    data: {
+                                        username: id,
+                                        addresses: addresses
+                                    }
+                                });
+                            }
                         })
                     }
                 }

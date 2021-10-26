@@ -31,3 +31,4 @@ steps:
     args: [ 'app', 'deploy', 'app.yaml']
 options:
   logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

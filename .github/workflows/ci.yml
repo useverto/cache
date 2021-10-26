@@ -1,0 +1,24 @@
+name: "CI"
+on:
+  pull_request:
+  push:
+    branches:
+      - dev
+      - master
+      - "releases/*"
+
+jobs:
+  # unit tests
+  tests:
+    name: "Unit tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: npm install -g @nestjs/cli
+      - run: npm run test

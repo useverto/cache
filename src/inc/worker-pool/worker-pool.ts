@@ -1,4 +1,4 @@
-import {WorkerPoolConfiguration, WorkerProcessPostResult, WorkerResult, WorkerStats} from "./model";
+import {WorkerItem, WorkerPoolConfiguration, WorkerProcessPostResult, WorkerResult, WorkerStats} from "./model";
 import Worker from 'web-worker';
 import path from "path";
 
@@ -11,14 +11,14 @@ export type OnReceived = (contractId: string, state: any) => void | Promise<void
  */
 export class WorkerPool {
 
-    private contractsQueue: Array<string> = [];
-    private workers: Array<Worker> = [];
-    private stats: Array<WorkerStats> = [];
-    private promises: Array<WorkerResult> = [];
-    private currentContractIdsWorkedOn: Array<string> = [];
+    contractsQueue: Array<string> = [];
+    workers: Array<WorkerItem> = [];
+    stats: Array<WorkerStats> = [];
+    promises: Array<WorkerResult> = [];
+    currentContractIdsWorkedOn: Array<string> = [];
+    timers: Array<any> = [];
 
     private globalOnReceived: OnReceived;
-
     private receivers: Map<string, OnReceived> = new Map<string, OnReceived>();
 
     constructor(private readonly configuration: WorkerPoolConfiguration) {
@@ -114,13 +114,6 @@ export class WorkerPool {
     }
 
     /**
-     * Returns the list of workers
-     */
-    public getWorkers(): Array<Worker> {
-        return this.workers;
-    }
-
-    /**
      * Creates a worker and initializes its behaviors
      * @param workerScaled Whether the worker was created due to scalation
      * @private
@@ -137,7 +130,11 @@ export class WorkerPool {
         // .push returns one number higher than the index
         const workerId = this.workers.push(undefined) - 1;
 
-        this.workers[workerId] = this.initializeBehaviors(worker, workerId);
+        this.workers[workerId] = {
+            worker: this.initializeBehaviors(worker, workerId),
+            id: workerId
+        };
+
         this.stats.push({
             workerId,
             contractsOnProcessing: 0,
@@ -159,7 +156,7 @@ export class WorkerPool {
             }
         });
         if (stat) {
-            this.workers[stat.workerId].postMessage({
+            this.workers[stat.workerId]?.worker?.postMessage({
                 contractId
             });
             this.currentContractIdsWorkedOn.push(contractId);
@@ -280,11 +277,11 @@ export class WorkerPool {
      * @private
      */
     private setTimers(): void {
-        setInterval(() => {
+        this.timers[0] = setInterval(() => {
             this.deleteScaledWorkers();
         }, 60000);
 
-        setInterval(() => {
+        this.timers[1] = setInterval(() => {
             this.processQueue();
         }, 60000);
     }
@@ -296,11 +293,12 @@ export class WorkerPool {
     private deleteScaledWorkers(): void {
         const scaledWorkers = this.stats.filter(stat => stat.workerScaled && stat.contractsOnProcessing <= 0);
         scaledWorkers.forEach(({ workerId }) => {
-            const worker = this.workers[workerId];
-            if(worker != undefined) {
-                this.workers[workerId].terminate();
-                this.workers.splice(workerId, 1);
-            }
+            this.workers.filter((item) => item.id === workerId)
+                .map((workerItem) => {
+                    workerItem.worker.terminate();
+                    return workerItem;
+                });
+            this.workers = this.workers.filter((item) => item.id !== workerId);
         });
         this.stats = this.stats.filter(stat => !stat.workerScaled);
     }

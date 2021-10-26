@@ -16,6 +16,7 @@ export class WorkerPool {
     stats: Array<WorkerStats> = [];
     promises: Array<WorkerResult> = [];
     currentContractIdsWorkedOn: Array<string> = [];
+    timers: Array<any> = [];
 
     private globalOnReceived: OnReceived;
     private receivers: Map<string, OnReceived> = new Map<string, OnReceived>();
@@ -276,11 +277,11 @@ export class WorkerPool {
      * @private
      */
     private setTimers(): void {
-        setInterval(() => {
+        this.timers[0] = setInterval(() => {
             this.deleteScaledWorkers();
         }, 60000);
 
-        setInterval(() => {
+        this.timers[1] = setInterval(() => {
             this.processQueue();
         }, 60000);
     }

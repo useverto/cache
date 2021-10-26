@@ -1,9 +1,12 @@
 import {WorkerPool} from "../inc/worker-pool/worker-pool";
+import {clearInterval} from "timers";
 
 describe('Worker Pool tests', () => {
 
-    const cleanWorkerPool = (pool: WorkerPool) => pool.workers
-        .forEach(item => item.worker.terminate());
+    const cleanWorkerPool = (pool: WorkerPool) => {
+        pool.workers.forEach(item => item.worker.terminate());
+        pool.timers.forEach(timer => clearInterval(timer));
+    }
 
     test('Create a worker pool', () => {
        const workerPool = new WorkerPool({
@@ -116,4 +119,5 @@ describe('Worker Pool tests', () => {
         });
         cleanWorkerPool(workerPool);
     });
+
 });

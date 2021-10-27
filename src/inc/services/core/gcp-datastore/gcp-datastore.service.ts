@@ -78,14 +78,6 @@ export class GcpDatastoreService {
     }
 
     /**
-     * Get all the rows in a table
-     * @param kind
-     */
-    getAll(kind: DatastoreKinds) {
-        return this.query(kind, (q) => q);
-    }
-
-    /**
      * Gets a single entity from datastore.
      * @param key
      */

@@ -1,6 +1,5 @@
 import {WorkerPool} from "../inc/worker-pool/worker-pool";
 import {clearInterval} from "timers";
-import {ExceptionHandlerService} from "../inc/services/core/handlers/exception-handler";
 
 describe('Worker Pool tests', () => {
 
@@ -120,22 +119,5 @@ describe('Worker Pool tests', () => {
         });
         cleanWorkerPool(workerPool);
     });
-
-    test('Retry contract if google exception', () => {
-        const spy = jest.fn();
-        // @ts-ignore
-        const workerPoolExceptionHandler = new ExceptionHandlerService({
-            sendContractToQueue: spy
-        });
-
-        // @ts-ignore
-        process.emit('uncaughtException', {
-            config: {
-                url: 'https://storage.googleapis.com/upload/storage/v1/b/verto-exchange-contracts/o?name=f1zRTRGpUfzrOvLislzXaPuKLyByu7_M5kGlfe_1XYQ%2Ff1zRTRGpUfzrOvLislzXaPuKLyByu7_M5kGlfe_1XYQ_validity.json&uploadType=resumable'
-            }
-        });
-
-        expect(spy).toHaveBeenCalledWith('f1zRTRGpUfzrOvLislzXaPuKLyByu7_M5kGlfe_1XYQ');
-    })
 
 });

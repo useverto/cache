@@ -45,26 +45,6 @@ export class ContractWorkerService {
     }
 
     /**
-     * Send a contract to the queue
-     * @param contractId
-     */
-    public sendContractToQueue(contractId: string): void {
-        this.workerPool.sendContractToQueue(contractId);
-    }
-
-    /**
-     * Get stats from the worker Pool
-     */
-    public getStats() {
-        return {
-            contractsQueue: this.workerPool.contractsQueue.length,
-            workers: this.workerPool.workers.length,
-            scaledWorkers: this.workerPool.stats.filter((item) => item.workerScaled).length,
-            currentContractIdsWorkedOn: this.workerPool.currentContractIdsWorkedOn.length
-        }
-    }
-
-    /**
      * Initializes the worker pool based on environmental configuration
      */
     private initializeWorker(): void {

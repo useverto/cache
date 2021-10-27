@@ -48,7 +48,7 @@ export class WorkerPool {
                 if (autoScale) {
                     workerToUse = this.createWorker(true);
                 } else {
-                    this.sendContractToQueue(contractId);
+                    this.contractsQueue.push(contractId);
                     returnData.state = 'ADDED_TO_QUEUE';
                 }
             } else {
@@ -70,7 +70,7 @@ export class WorkerPool {
                 };
             }
         } else {
-            this.sendContractToQueue(contractId);
+            this.contractsQueue.push(contractId);
             returnData.state = 'CURRENTLY_PROCESSING';
         }
 
@@ -111,10 +111,6 @@ export class WorkerPool {
      */
     public removeReceiver(contractId: string): void {
         this.receivers.delete(contractId);
-    }
-
-    public sendContractToQueue(contractId: string): void {
-        this.contractsQueue.push(contractId);
     }
 
     /**
@@ -300,7 +296,6 @@ export class WorkerPool {
             this.workers.filter((item) => item.id === workerId)
                 .map((workerItem) => {
                     workerItem.worker.terminate();
-                    console.log(`Scaled worker #${workerItem.id} terminated`);
                     return workerItem;
                 });
             this.workers = this.workers.filter((item) => item.id !== workerId);

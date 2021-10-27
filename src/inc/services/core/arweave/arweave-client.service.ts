@@ -14,6 +14,7 @@ export class ArweaveClientService {
             host: process.env["ARWEAVE_SERVER"],
             port: parseInt(process.env["ARWEAVE_PORT"]!),
             protocol: "https",
+            timeout: 180000
         });
     }
 

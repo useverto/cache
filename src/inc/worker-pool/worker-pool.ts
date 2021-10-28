@@ -304,6 +304,7 @@ export class WorkerPool {
             this.workers.filter((item) => item.id === workerId)
                 .map((workerItem) => {
                     workerItem.worker.terminate();
+                    console.log(`Scaled worker #${workerItem.id} terminated`);
                     return workerItem;
                 });
             this.workers = this.workers.filter((item) => item.id !== workerId);

@@ -132,7 +132,8 @@ describe('Worker Pool tests', () => {
         const spy = jest.fn();
         // @ts-ignore
         const workerPoolExceptionHandler = new ExceptionHandlerService({
-            sendContractToQueue: spy
+            sendContractToQueue: spy,
+            exitContractWorkerPoolSafely: jest.fn(() => [])
         });
 
         // @ts-ignore

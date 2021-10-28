@@ -113,6 +113,10 @@ export class WorkerPool {
         this.receivers.delete(contractId);
     }
 
+    /**
+     * Adds a contract to the queue
+     * @param contractId
+     */
     public sendContractToQueue(contractId: string): void {
         this.contractsQueue.push(contractId);
     }

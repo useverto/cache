@@ -5,8 +5,9 @@ import {GcpContractStorageService} from "../../inc/services/core/gcp-contract-st
 import {ContractWorkerService} from "../../inc/services/core/contract-worker/contract-worker.service";
 import {GcpDatastoreService} from "../../inc/services/core/gcp-datastore/gcp-datastore.service";
 import {ExceptionHandlerService} from "../../inc/services/core/handlers/exception-handler";
+import {RecoverableContractsDatastoreService} from "../../inc/services/contracts-datastore/recoverable-contracts-datastore.service";
 
-const members = [ArweaveClientService, GcpStorageService, GcpContractStorageService, ContractWorkerService, GcpDatastoreService, ExceptionHandlerService]
+const members = [ArweaveClientService, GcpStorageService, GcpContractStorageService, ContractWorkerService, GcpDatastoreService, ExceptionHandlerService, RecoverableContractsDatastoreService]
 
 @Module({
     providers: [...members],

@@ -9,13 +9,19 @@ export class ExceptionHandlerService {
     }
 
     private setHandler() {
-        process.on('uncaughtException', (err) => {
+        process.on('uncaughtException', async (err) => {
+            const isTest = process.env.JEST_WORKER_ID;
             const stack = err.stack;
             const error: any = err;
             const requestUrl = error?.config?.url || '';
             console.error(err);
             if(!(requestUrl.includes('https://storage.googleapis.com/upload/storage/v1/b/verto-exchange-contracts'))) {
+                await Promise.allSettled(this.contractWorkerService.exitContractWorkerPoolSafely());
                 process.exit(1);
+                if(isTest) {
+                    // @ts-ignore
+                    await global["uncaughtException-RESOLVE"]();
+                }
             } else {
                 if(requestUrl !== '') {
                     this.retryContractIfException(requestUrl);

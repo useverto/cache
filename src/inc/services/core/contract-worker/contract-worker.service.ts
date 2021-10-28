@@ -9,6 +9,7 @@ import {CommunityTokensDatastore} from "../gcp-datastore/kind-interfaces/ds-comm
 import {CommunityPeopleDatastore} from "../gcp-datastore/kind-interfaces/ds-community-people";
 import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts-vs-address";
 import {WorkerProcessPostResult} from "../../../worker-pool/model";
+import {RecoverableContractsDatastoreService} from "../../contracts-datastore/recoverable-contracts-datastore.service";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -17,13 +18,15 @@ import {WorkerProcessPostResult} from "../../../worker-pool/model";
 @Injectable()
 export class ContractWorkerService {
 
-    private workerPool: WorkerPool;
+    workerPool: WorkerPool;
 
     constructor(private readonly gcpContractStorage: GcpContractStorageService,
-                private readonly gcpDatastoreService: GcpDatastoreService) {
+                private readonly gcpDatastoreService: GcpDatastoreService,
+                private readonly recoverableContractDatastoreService: RecoverableContractsDatastoreService) {
         this.initializeWorker();
         this.initializeBehaviors();
         this.initializeCommunityContractHandler();
+        this.recoverContracts();
     }
 
     /**
@@ -62,6 +65,22 @@ export class ContractWorkerService {
             scaledWorkers: this.workerPool.stats.filter((item) => item.workerScaled).length,
             currentContractIdsWorkedOn: this.workerPool.currentContractIdsWorkedOn.length
         }
+    }
+
+    /**
+     * Add contracts being worked on and queue to the list of recoverable.
+     */
+    public exitContractWorkerPoolSafely(): Array<Promise<any>> {
+        const contracts = [
+            ...this.workerPool.contractsQueue,
+            ...this.workerPool.currentContractIdsWorkedOn
+        ];
+        this.workerPool.contractsQueue = [];
+        this.workerPool.currentContractIdsWorkedOn = [];
+
+        return contracts.map(async (item) => {
+            return await this.recoverableContractDatastoreService.saveContract(item)
+        });
     }
 
     /**
@@ -179,5 +198,15 @@ export class ContractWorkerService {
                 }
             }
         );
+    }
+
+    /**
+     * Recover all the contracts and send them to the worker pool
+     */
+    private async recoverContracts() {
+        const contracts = await this.recoverableContractDatastoreService.getAllAndClean();
+        contracts.forEach((item) => {
+            this.sendContractToWorkerPool(item.contractId);
+        });
     }
 }

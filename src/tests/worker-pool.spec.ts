@@ -1,5 +1,6 @@
 import {WorkerPool} from "../inc/worker-pool/worker-pool";
 import {clearInterval} from "timers";
+import {ExceptionHandlerService} from "../inc/services/core/handlers/exception-handler";
 
 //@ts-ignore
 const setProperty = (object, property, value) => {

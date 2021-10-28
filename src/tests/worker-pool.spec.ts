@@ -2,6 +2,13 @@ import {WorkerPool} from "../inc/worker-pool/worker-pool";
 import {clearInterval} from "timers";
 import {ExceptionHandlerService} from "../inc/services/core/handlers/exception-handler";
 
+//@ts-ignore
+const setProperty = (object, property, value) => {
+    const originalProperty = Object.getOwnPropertyDescriptor(object, property)
+    Object.defineProperty(object, property, { value })
+    return originalProperty
+}
+
 describe('Worker Pool tests', () => {
 
     const cleanWorkerPool = (pool: WorkerPool) => {
@@ -136,6 +143,32 @@ describe('Worker Pool tests', () => {
         });
 
         expect(spy).toHaveBeenCalledWith('f1zRTRGpUfzrOvLislzXaPuKLyByu7_M5kGlfe_1XYQ');
-    })
+    });
 
+    test('Call contract recovery if process dies', async () => {
+        const mockExit = jest.fn()
+        setProperty(process, 'exit', mockExit);
+        const spy = jest.fn(() => []);
+
+        // @ts-ignore
+        global["uncaughtException-PROMISE"] = new Promise((resolve) => {
+            // @ts-ignore
+            global["uncaughtException-RESOLVE"] = resolve;
+        })
+
+        // @ts-ignore
+        const workerPoolExceptionHandler = new ExceptionHandlerService({
+            exitContractWorkerPoolSafely: spy,
+        });
+
+        // @ts-ignore
+        process.emit('uncaughtException', {
+        });
+
+        //@ts-ignore
+        await global["uncaughtException-PROMISE"];
+
+        expect(spy).toHaveBeenCalled();
+        expect(mockExit).toHaveBeenCalledWith(1);
+    });
 });

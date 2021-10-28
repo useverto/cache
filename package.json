@@ -1,7 +1,7 @@
 {
   "name": "verto-cache-api",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "main": "dist/main.js",

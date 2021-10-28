@@ -2,7 +2,7 @@ import {Injectable} from "@nestjs/common";
 import {Datastore, Query} from "@google-cloud/datastore";
 import {GcpCredentials} from "../../../gcp-credentials/gcp-credentials";
 import {DatastoreEntities, DatastoreEntity, DatastoreKinds, EntityBuilder, Queryable, QueryResult} from "./model";
-import {entity} from "@google-cloud/datastore/build/src/entity";
+import {Entities, entity} from "@google-cloud/datastore/build/src/entity";
 import {RunQueryOptions, RunQueryResponse} from "@google-cloud/datastore/build/src/query";
 import {GetResponse, SaveResponse} from "@google-cloud/datastore/build/src/request";
 
@@ -83,6 +83,13 @@ export class GcpDatastoreService {
      */
     getAll(kind: DatastoreKinds) {
         return this.query(kind, (q) => q);
+    }
+
+    /**
+     * Delete all in a table
+     */
+    delete(entities: Entities) {
+        return this.datastoreInstance.delete(entities);
     }
 
     /**

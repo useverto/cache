@@ -5,6 +5,7 @@ import {DatastoreEntities, DatastoreEntity, DatastoreKinds, EntityBuilder, Query
 import {Entities, entity} from "@google-cloud/datastore/build/src/entity";
 import {RunQueryOptions, RunQueryResponse} from "@google-cloud/datastore/build/src/query";
 import {GetResponse, SaveResponse} from "@google-cloud/datastore/build/src/request";
+import {sleep} from "../../../../utils/commons";
 
 /**
  * This service is responsible for interacting with Datastore on a common basis.
@@ -53,11 +54,12 @@ export class GcpDatastoreService {
      * Saves one or multiple entities based on {@link DatastoreEntity}
      * @param entity
      */
-    save<T = any>(entity: Array<DatastoreEntity<T>> | DatastoreEntity<T>): Promise<SaveResponse> {
+    async save<T = any>(entity: Array<DatastoreEntity<T>> | DatastoreEntity<T>): Promise<SaveResponse> {
         const save = () => this.datastoreInstance.save(entity);
         try {
             return save();
         } catch (e) {
+            await sleep(5000);
             this.renewConnection();
             return save();
         }
@@ -67,11 +69,12 @@ export class GcpDatastoreService {
      * Tries to get an entity or multiple entities from google datastore
      * @param key
      */
-    get(key: DatastoreEntities): Promise<GetResponse> {
+    async get(key: DatastoreEntities): Promise<GetResponse> {
         const getItem = () => this.datastoreInstance.get(key);
         try {
             return getItem();
         } catch (e) {
+            await sleep(5000);
             this.renewConnection();
             return getItem();
         }
@@ -107,7 +110,7 @@ export class GcpDatastoreService {
      * @param processor a query builder that modifies the main query. Useful to add filters, orders, etc.
      * @param options Options to be held by the query at execution
      */
-    query(kind: DatastoreKinds, processor: (query: Query) => Query, options?: RunQueryOptions): Promise<RunQueryResponse> {
+    async query(kind: DatastoreKinds, processor: (query: Query) => Query, options?: RunQueryOptions): Promise<RunQueryResponse> {
         let query = this.datastoreInstance.createQuery(kind);
         if(processor) {
             query = processor(query);
@@ -118,6 +121,7 @@ export class GcpDatastoreService {
         try {
             return runQuery();
         } catch {
+            await sleep(5000);
             this.renewConnection();
             return runQuery();
         }

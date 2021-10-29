@@ -104,23 +104,27 @@ export class ContractWorkerService {
      */
     private initializeBehaviors(): void {
         this.workerPool.setOnReceived(async (contractId, state) => {
-            await this.gcpContractStorage.uploadState(contractId, state, true);
-            await this.uploadAddress(contractId, state);
-            const realState = state?.state;
-            await this.gcpDatastoreService.saveFull<ContractsDatastore>({
-                kind: DatastoreKinds.CONTRACTS,
-                id: contractId,
-                data: {
-                    contractId,
-                    updated: new Date().getTime(),
-                    ticker: realState?.ticker,
-                    name: realState?.name,
-                    title: realState?.title,
-                    description: realState?.description,
-                    owner: realState?.owner,
-                    allowMinting: realState?.allowMinting
-                }
-            });
+            this.processOnReceive(contractId, state);
+        });
+    }
+
+    private async processOnReceive(contractId: string, state: any) {
+        await this.gcpContractStorage.uploadState(contractId, state, true);
+        await this.uploadAddress(contractId, state);
+        const realState = state?.state;
+        await this.gcpDatastoreService.saveFull<ContractsDatastore>({
+            kind: DatastoreKinds.CONTRACTS,
+            id: contractId,
+            data: {
+                contractId,
+                updated: new Date().getTime(),
+                ticker: realState?.ticker,
+                name: realState?.name,
+                title: realState?.title,
+                description: realState?.description,
+                owner: realState?.owner,
+                allowMinting: realState?.allowMinting
+            }
         });
     }
 
@@ -156,48 +160,52 @@ export class ContractWorkerService {
     private initializeCommunityContractHandler(): void {
         this.workerPool.setReceiver(Constants.COMMUNITY_CONTRACT,
             (contractId: string, parentState: any) => {
-                if(parentState) {
-                    let state = parentState.state;
-                    if(!state) {
-                        return;
-                    }
-                    if(state.tokens) {
-                        const tokens: Array<any> = state.tokens;
-                        tokens.forEach((item) => {
-                            this.gcpDatastoreService.saveFull<CommunityTokensDatastore>({
-                                kind: DatastoreKinds.COMMUNITY_TOKENS,
-                                id: item.id,
-                                data: {
-                                    contractId: item.id,
-                                    type: item.type,
-                                    lister: item.lister
-                                }
-                            });
-                        })
-                    }
-                    if(state.people) {
-                        const users: Array<any> = state.people;
-                        users.forEach(async (item) => {
-                            const kind = DatastoreKinds.COMMUNITY_PEOPLE;
-                            const id = item.username;
-                            const addresses = ((item.addresses || []) as string[]).join(",");
-
-                            const getSingle = await this.gcpDatastoreService.getSingle<CommunityPeopleDatastore>(this.gcpDatastoreService.createKey(kind, id));
-                            if(getSingle && getSingle.addresses !== addresses) {
-                                this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
-                                    kind: kind,
-                                    id: id,
-                                    data: {
-                                        username: id,
-                                        addresses: addresses
-                                    }
-                                });
-                            }
-                        })
-                    }
-                }
+                this.processCommunityContract(contractId, parentState);
             }
         );
+    }
+
+    private async processCommunityContract(contractId: string, parentState: any) {
+        if(parentState) {
+            let state = parentState.state;
+            if(!state) {
+                return;
+            }
+            if(state.tokens) {
+                const tokens: Array<any> = state.tokens;
+                tokens.forEach((item) => {
+                    this.gcpDatastoreService.saveFull<CommunityTokensDatastore>({
+                        kind: DatastoreKinds.COMMUNITY_TOKENS,
+                        id: item.id,
+                        data: {
+                            contractId: item.id,
+                            type: item.type,
+                            lister: item.lister
+                        }
+                    });
+                })
+            }
+            if(state.people) {
+                const users: Array<any> = state.people;
+                await Promise.all(users.map(async (item) => {
+                    const kind = DatastoreKinds.COMMUNITY_PEOPLE;
+                    const id = item.username;
+                    const addresses = ((item.addresses || []) as string[]).join(",");
+
+                    const getSingle = await this.gcpDatastoreService.getSingle<CommunityPeopleDatastore>(this.gcpDatastoreService.createKey(kind, id));
+                    if(!getSingle || getSingle && getSingle.addresses !== addresses) {
+                        this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
+                            kind: kind,
+                            id: id,
+                            data: {
+                                username: id,
+                                addresses: addresses
+                            }
+                        });
+                    }
+                }));
+            }
+        }
     }
 
     /**

@@ -103,11 +103,11 @@ export class ContractWorkerService {
      *
      */
     private initializeBehaviors(): void {
-        this.workerPool.setOnReceived((contractId, state) => {
-            this.gcpContractStorage.uploadState(contractId, state, true);
-            this.uploadAddress(contractId, state);
+        this.workerPool.setOnReceived(async (contractId, state) => {
+            await this.gcpContractStorage.uploadState(contractId, state, true);
+            await this.uploadAddress(contractId, state);
             const realState = state?.state;
-            this.gcpDatastoreService.saveFull<ContractsDatastore>({
+            await this.gcpDatastoreService.saveFull<ContractsDatastore>({
                 kind: DatastoreKinds.CONTRACTS,
                 id: contractId,
                 data: {
@@ -131,12 +131,12 @@ export class ContractWorkerService {
         const balancesInState = state?.state?.balances;
         if(balancesInState) {
             const balances: Array<string> | undefined = Object.keys(balancesInState);
-            balances?.map(async (addressId) => {
+            await Promise.allSettled(balances?.map(async (addressId) => {
                 const kind = DatastoreKinds.CONTRACTS_VS_ADDRESS;
                 const key = `${contractId}-${addressId}`;
                 const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(kind, key));
                 if(!getSingle) {
-                    this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
+                    await this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
                         kind: kind,
                         id: key,
                         data: {
@@ -145,7 +145,7 @@ export class ContractWorkerService {
                         }
                     });
                 }
-            });
+            }));
         }
     }
 

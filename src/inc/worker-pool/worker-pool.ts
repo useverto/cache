@@ -228,27 +228,26 @@ export class WorkerPool {
             this.currentContractIdsWorkedOn = this.currentContractIdsWorkedOn.filter(contract => contract !== contractId);
         }
 
-        worker.addEventListener('message', e => {
+        worker.addEventListener('message', async e => {
             const data = e.data;
             const type = data.type;
             const contractId = data.contractId;
             const state = data.state;
 
-            decreaseContractsOnProcessing();
-            removeContractLock(contractId);
-
             const isError = type === 'error';
 
             if(this.globalOnReceived && !isError) {
-                this.globalOnReceived(contractId, state);
+                await this.globalOnReceived(contractId, state);
                 console.log(`Global handler for ${contractId} has been invoked`);
             }
 
             if(this.receivers.has(contractId) && !isError) {
                 const receiver: OnReceived = this.receivers.get(contractId)!;
-                receiver(contractId, state);
+                await receiver(contractId, state);
             }
 
+            decreaseContractsOnProcessing();
+            removeContractLock(contractId);
             resolvePromises(contractId, data, isError);
         });
 

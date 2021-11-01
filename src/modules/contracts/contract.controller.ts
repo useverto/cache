@@ -1,15 +1,27 @@
-import {Controller, Param, Post, Query, UseGuards} from "@nestjs/common";
+import {Controller, Get, Param, Post, Query, UseGuards} from "@nestjs/common";
 import {ContractService} from "../../inc/services/contracts/contract.service";
 import {ContractWorkerService} from "../../inc/services/core/contract-worker/contract-worker.service";
 import {OnlyDevGuard} from "../commons/guards/only-dev.guard";
 import {WorkerProcessPostResult} from "../../inc/worker-pool/model";
 import {ContractResult} from "../../inc/common.model";
+import {FailedContractsDatastoreService} from "../../inc/services/contracts-datastore/failed-contracts-datastore.service";
 
 @Controller('contracts')
 export class ContractController {
 
     constructor(private readonly contractService: ContractService,
-                private readonly contractWorkerService: ContractWorkerService) {
+                private readonly contractWorkerService: ContractWorkerService,
+                private readonly failedContractDatastoreService: FailedContractsDatastoreService) {
+    }
+
+    @Get('status/:id')
+    async isFailed(@Param('id') id: string) {
+        const failedContract = await this.failedContractDatastoreService.getFailedContract(id);
+
+        return {
+            contractId: id,
+            status: failedContract ? 'FAILED' : 'OK'
+        }
     }
 
     @Post('save/:id')

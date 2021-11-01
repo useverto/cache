@@ -13,6 +13,7 @@ describe('Contract worker service spec', () => {
     let createKey = jest.fn();
     let saveContract = jest.fn();
     let getAllAndClean = jest.fn(() => []);
+    let deletefn = jest.fn();
     let contractWorkerService: ContractWorkerService;
 
     const cleanWorkerPool = (pool: WorkerPool) => {
@@ -24,9 +25,10 @@ describe('Contract worker service spec', () => {
         uploadState = jest.fn();
         saveFull = data?.saveFull || jest.fn();
         getSingle = data?.getSingle || jest.fn();
-        createKey = jest.fn();
+        createKey = data?.createKey || jest.fn();
         saveContract = jest.fn();
         getAllAndClean = jest.fn(() => []);
+        deletefn = jest.fn();
 
         // @ts-ignore
         contractWorkerService = new ContractWorkerService({
@@ -34,7 +36,8 @@ describe('Contract worker service spec', () => {
         }, {
             saveFull,
             getSingle,
-            createKey
+            createKey,
+            delete: deletefn
         }, {
             saveContract,
             getAllAndClean
@@ -134,6 +137,53 @@ describe('Contract worker service spec', () => {
         expect(saveFull).not.toHaveBeenCalled();
         cleanWorkerPool(contractWorkerService.workerPool);
     });
+
+    test('Delete failed contracts', async () => {
+        resetMockUps({
+            createKey: jest.fn((kind, contractId) => ({
+                kind,
+                contractId
+            })),
+            getSingle: jest.fn((key) => ({}))
+        });
+        //@ts-ignore
+        await contractWorkerService["deleteFromFailedContracts"]('__TEST__');
+
+        expect(createKey).toBeCalledWith(DatastoreKinds.FAILED_CONTRACTS, `__TEST__`);
+        expect(getSingle).toHaveBeenCalledWith({
+            kind: DatastoreKinds.FAILED_CONTRACTS,
+            contractId: '__TEST__'
+        });
+        expect(deletefn).toHaveBeenCalled();
+        cleanWorkerPool(contractWorkerService.workerPool);
+    });
+
+    test('Delete failed contracts dont delete', async () => {
+        resetMockUps({
+            createKey: jest.fn((kind, contractId) => ({
+                kind,
+                contractId
+            }))
+        });
+        //@ts-ignore
+        await contractWorkerService["deleteFromFailedContracts"]('__TEST__');
+        expect(deletefn).not.toHaveBeenCalled();
+        cleanWorkerPool(contractWorkerService.workerPool);
+    });
+
+    test('handleErrorContract', async () => {
+        resetMockUps();
+        // @ts-ignore
+        await contractWorkerService["handleErrorContract"]('__TEST__');
+        expect(saveFull).toHaveBeenCalledWith({
+            kind: DatastoreKinds.FAILED_CONTRACTS,
+            id: '__TEST__',
+            data: {
+                contractId: '__TEST__'
+            }
+        });
+        cleanWorkerPool(contractWorkerService.workerPool);
+    })
 
     test('Process community contract tokens', async () => {
         resetMockUps();

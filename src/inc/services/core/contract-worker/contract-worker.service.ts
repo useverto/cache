@@ -10,6 +10,7 @@ import {CommunityPeopleDatastore} from "../gcp-datastore/kind-interfaces/ds-comm
 import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts-vs-address";
 import {WorkerProcessPostResult} from "../../../worker-pool/model";
 import {RecoverableContractsDatastoreService} from "../../contracts-datastore/recoverable-contracts-datastore.service";
+import {DsFailedContracts} from "../gcp-datastore/kind-interfaces/ds-failed-contracts";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -104,12 +105,17 @@ export class ContractWorkerService {
      */
     private initializeBehaviors(): void {
         this.workerPool.setOnReceived(async (contractId, state) => {
-            this.processOnReceive(contractId, state);
+            await this.processOnReceive(contractId, state);
         });
+
+        this.workerPool.setOnError(async (contractId, exception) => {
+            await this.handleErrorContract(contractId, exception);
+        })
     }
 
     private async processOnReceive(contractId: string, state: any) {
         await this.gcpContractStorage.uploadState(contractId, state, true);
+        await this.deleteFromFailedContracts(contractId);
         await this.uploadAddress(contractId, state);
         const realState = state?.state;
         await this.gcpDatastoreService.saveFull<ContractsDatastore>({
@@ -173,8 +179,8 @@ export class ContractWorkerService {
             }
             if(state.tokens) {
                 const tokens: Array<any> = state.tokens;
-                tokens.forEach((item) => {
-                    this.gcpDatastoreService.saveFull<CommunityTokensDatastore>({
+                await Promise.allSettled(tokens.map(async (item) => {
+                    await this.gcpDatastoreService.saveFull<CommunityTokensDatastore>({
                         kind: DatastoreKinds.COMMUNITY_TOKENS,
                         id: item.id,
                         data: {
@@ -183,18 +189,18 @@ export class ContractWorkerService {
                             lister: item.lister
                         }
                     });
-                })
+                }));
             }
             if(state.people) {
                 const users: Array<any> = state.people;
-                await Promise.all(users.map(async (item) => {
+                await Promise.allSettled(users.map(async (item) => {
                     const kind = DatastoreKinds.COMMUNITY_PEOPLE;
                     const id = item.username;
                     const addresses = ((item.addresses || []) as string[]).join(",");
 
                     const getSingle = await this.gcpDatastoreService.getSingle<CommunityPeopleDatastore>(this.gcpDatastoreService.createKey(kind, id));
                     if(!getSingle || getSingle && getSingle.addresses !== addresses) {
-                        this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
+                        await this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
                             kind: kind,
                             id: id,
                             data: {
@@ -208,11 +214,34 @@ export class ContractWorkerService {
         }
     }
 
+    private async handleErrorContract(contractId: string, exception: any) {
+        console.error(exception);
+        await this.gcpDatastoreService.saveFull<DsFailedContracts>({
+            kind: DatastoreKinds.FAILED_CONTRACTS,
+            id: contractId,
+            data: {
+                contractId: contractId
+            }
+        });
+    }
+
+    private async deleteFromFailedContracts(contractId: string) {
+        const isContractMarkedAsFailed = await this.gcpDatastoreService.getSingle(
+            this.gcpDatastoreService.createKey(DatastoreKinds.FAILED_CONTRACTS, contractId)
+        );
+        if(isContractMarkedAsFailed) {
+            await this.gcpDatastoreService.delete(this.gcpDatastoreService.createKey(DatastoreKinds.FAILED_CONTRACTS, contractId));
+        }
+    }
+
     /**
-     * Recover all the contracts and send them to the worker pool
+     * Recover all the contracts (failed and recoverable) and send them to the worker pool
      */
     private async recoverContracts() {
-        const contracts = await this.recoverableContractDatastoreService.getAllAndClean();
+        const contracts = [
+            ...await this.recoverableContractDatastoreService.getAllAndClean(),
+            ...await this.recoverableContractDatastoreService.getAllAndClean('failed')
+        ];
         contracts.forEach((item) => {
             this.sendContractToWorkerPool(item.contractId);
         });

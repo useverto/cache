@@ -3,6 +3,7 @@ import Worker from 'web-worker';
 import path from "path";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
+export type OnError = (contractId: string, exception: any) => void | Promise<void>;
 
 /**
  * This class is known as the worker pool.
@@ -19,6 +20,7 @@ export class WorkerPool {
     timers: Array<any> = [];
 
     private globalOnReceived: OnReceived;
+    private globalOnError: OnError;
     private receivers: Map<string, OnReceived> = new Map<string, OnReceived>();
 
     constructor(private readonly configuration: WorkerPoolConfiguration) {
@@ -93,6 +95,15 @@ export class WorkerPool {
      */
     public setOnReceived(callback: OnReceived): void {
         this.globalOnReceived = callback;
+    }
+
+    /**
+     * Sets a callback to be applied to the execution of all the contracts fails.
+     * Useful to add layers of managing error handling.
+     * @param callback
+     */
+    public setOnError(callback: OnError): void {
+        this.globalOnError = callback;
     }
 
     /**
@@ -232,6 +243,7 @@ export class WorkerPool {
             const data = e.data;
             const type = data.type;
             const contractId = data.contractId;
+            const exception = data.ex;
             const state = data.state;
 
             const isError = type === 'error';
@@ -244,6 +256,10 @@ export class WorkerPool {
             if(this.receivers.has(contractId) && !isError) {
                 const receiver: OnReceived = this.receivers.get(contractId)!;
                 await receiver(contractId, state);
+            }
+
+            if(isError && this.globalOnError) {
+                await this.globalOnError(contractId, exception);
             }
 
             decreaseContractsOnProcessing();

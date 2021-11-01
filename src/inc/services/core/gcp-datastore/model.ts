@@ -7,7 +7,7 @@ export enum DatastoreKinds {
     COMMUNITY_PEOPLE = "COMMUNITY_PEOPLE",
     CONTRACTS_VS_ADDRESS = "CONTRACTS_VS_ADDRESS",
     RECOVERABLE_CONTRACTS = "RECOVERABLE_CONTRACTS",
-    CONTRACT_STATUS = "CONTRACT_STATUS"
+    FAILED_CONTRACTS = "FAILED_CONTRACTS",
 }
 
 export type DatastoreEntities = entity.Key | Array<entity.Key>;

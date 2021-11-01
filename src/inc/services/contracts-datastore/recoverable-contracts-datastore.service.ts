@@ -20,12 +20,17 @@ export class RecoverableContractsDatastoreService {
         });
     }
 
-    async getAllAndClean(): Promise<Array<DsContractRecoverable>> {
-        const contracts = (await this.gcpDatastoreService.getAll(DatastoreKinds.RECOVERABLE_CONTRACTS))
+    async getAllAndClean(type: 'recoverable' | 'failed' = 'recoverable'): Promise<Array<DsContractRecoverable>> {
+        const contracts = (await this.gcpDatastoreService.getAll(type === 'recoverable'
+            ? DatastoreKinds.RECOVERABLE_CONTRACTS
+            : DatastoreKinds.FAILED_CONTRACTS))
             .flat()
             .filter(item => item.contractId);
 
-        await this.gcpDatastoreService.delete([...contracts]);
+        await this.gcpDatastoreService.delete([...contracts].map(item => this.gcpDatastoreService.createKey(
+            DatastoreKinds.RECOVERABLE_CONTRACTS,
+            item.contractId
+        )));
 
         return contracts;
     }

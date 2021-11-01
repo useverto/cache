@@ -5,6 +5,7 @@ import {Constants} from "../../inc/constants";
 import {GcpDatastoreService} from "../../inc/services/core/gcp-datastore/gcp-datastore.service";
 import {DatastoreKinds} from "../../inc/services/core/gcp-datastore/model";
 import {GcpContractStorageService} from "../../inc/services/core/gcp-contract-storage/gcp-contract-storage.service";
+import {RecoverableContractsDatastoreService} from "../../inc/services/contracts-datastore/recoverable-contracts-datastore.service";
 
 @Controller('worker-pool')
 @UseGuards(InternalAuthGuard)
@@ -12,7 +13,8 @@ export class WorkerPoolController {
 
     constructor(private readonly contractWorkerService: ContractWorkerService,
                 private readonly gcpDatastoreService: GcpDatastoreService,
-                private readonly gcpContractStorageService: GcpContractStorageService) {
+                private readonly gcpContractStorageService: GcpContractStorageService,
+                private readonly recoverableContractDatastoreService: RecoverableContractsDatastoreService) {
     }
 
     @Post('execute-community-contract')
@@ -40,6 +42,14 @@ export class WorkerPoolController {
             this.contractWorkerService.sendContractToWorkerPool(item.contractId);
         });
         return missingContracts;
+    }
+
+    @Post('execute-failed-contracts')
+    async executeFailedContracts() {
+        const contracts = await this.recoverableContractDatastoreService.getAllAndClean('failed');
+        contracts.forEach((item) => {
+            this.contractWorkerService.sendContractToWorkerPool(item.contractId);
+        });
     }
 
     private async getAllContracts() {

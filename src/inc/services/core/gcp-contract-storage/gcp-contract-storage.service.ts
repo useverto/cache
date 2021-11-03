@@ -21,15 +21,15 @@ export class GcpContractStorageService {
      * @param state state of the contract
      * @param validityFile whether to upload the validity (in a separate file)
      */
-    async uploadState(contractId: string, state: any, validityFile: boolean = false): Promise<Promise<void>[]> {
+    async uploadState(contractId: string, state: any, validityFile: boolean = false): Promise<Array<void>> {
         try {
-            const fileUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+            const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
                 fileName: `${contractId}/${contractId}_state.json`,
                 fileContent: JSON.stringify(validityFile ? state["state"] : state, null, 2)
             });
 
             if (validityFile) {
-                const validityUpload = this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                const validityUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
                     fileName: `${contractId}/${contractId}_validity.json`,
                     fileContent: JSON.stringify(state.validity, null, 2)
                 });
@@ -61,6 +61,22 @@ export class GcpContractStorageService {
                 "maxAgeSeconds": 3600
             }
         ]);
+    }
+
+    async findAllContractsInStorage(): Promise<Array<any>> {
+        const options = {
+            autoPaginate: false,
+            delimiter: "/"
+        };
+
+        const [files, nextQuery, apiResponse] = await this.gcpStorage
+            .getBucket(this.PARENT_BUCKET_NAME)
+            .getFiles(options);
+
+        return ((apiResponse.prefixes || []) as Array<string>)
+            .map(item => item.replace('/', ''))
+            .map(item => ({ [item]: true }))
+            .flat();
     }
 
 }

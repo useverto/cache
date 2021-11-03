@@ -10,6 +10,8 @@ import {CommunityPeopleDatastore} from "../gcp-datastore/kind-interfaces/ds-comm
 import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-contracts-vs-address";
 import {WorkerProcessPostResult} from "../../../worker-pool/model";
 import {RecoverableContractsDatastoreService} from "../../contracts-datastore/recoverable-contracts-datastore.service";
+import {DsFailedContracts} from "../gcp-datastore/kind-interfaces/ds-failed-contracts";
+import {DsBlacklistedContracts} from "../gcp-datastore/kind-interfaces/ds-blacklisted-contracts";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -26,6 +28,7 @@ export class ContractWorkerService {
         this.initializeWorker();
         this.initializeBehaviors();
         this.initializeCommunityContractHandler();
+        this.initializeBlacklistedContracts();
         this.recoverContracts();
     }
 
@@ -103,24 +106,37 @@ export class ContractWorkerService {
      *
      */
     private initializeBehaviors(): void {
-        this.workerPool.setOnReceived((contractId, state) => {
-            this.gcpContractStorage.uploadState(contractId, state, true);
-            this.uploadAddress(contractId, state);
-            const realState = state?.state;
-            this.gcpDatastoreService.saveFull<ContractsDatastore>({
-                kind: DatastoreKinds.CONTRACTS,
-                id: contractId,
-                data: {
-                    contractId,
-                    updated: new Date().getTime(),
-                    ticker: realState?.ticker,
-                    name: realState?.name,
-                    title: realState?.title,
-                    description: realState?.description,
-                    owner: realState?.owner,
-                    allowMinting: realState?.allowMinting
-                }
-            });
+        this.workerPool.setOnReceived(async (contractId, state) => {
+            await this.processOnReceive(contractId, state);
+        });
+
+        this.workerPool.setOnError(async (contractId, exception) => {
+            await this.handleErrorContract(contractId, exception);
+        });
+
+        this.workerPool.setOnFaulty(async (contractId: string) => {
+           await this.handleFaultyContract(contractId);
+        });
+    }
+
+    private async processOnReceive(contractId: string, state: any) {
+        await this.gcpContractStorage.uploadState(contractId, state, true);
+        await this.deleteFromFailedContracts(contractId);
+        await this.uploadAddress(contractId, state);
+        const realState = state?.state;
+        await this.gcpDatastoreService.saveFull<ContractsDatastore>({
+            kind: DatastoreKinds.CONTRACTS,
+            id: contractId,
+            data: {
+                contractId,
+                updated: new Date().getTime(),
+                ticker: realState?.ticker,
+                name: realState?.name,
+                title: realState?.title,
+                description: realState?.description,
+                owner: realState?.owner,
+                allowMinting: realState?.allowMinting
+            }
         });
     }
 
@@ -131,12 +147,12 @@ export class ContractWorkerService {
         const balancesInState = state?.state?.balances;
         if(balancesInState) {
             const balances: Array<string> | undefined = Object.keys(balancesInState);
-            balances?.map(async (addressId) => {
+            await Promise.allSettled(balances?.map(async (addressId) => {
                 const kind = DatastoreKinds.CONTRACTS_VS_ADDRESS;
                 const key = `${contractId}-${addressId}`;
                 const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(kind, key));
                 if(!getSingle) {
-                    this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
+                    await this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
                         kind: kind,
                         id: key,
                         data: {
@@ -145,7 +161,7 @@ export class ContractWorkerService {
                         }
                     });
                 }
-            });
+            }));
         }
     }
 
@@ -156,57 +172,101 @@ export class ContractWorkerService {
     private initializeCommunityContractHandler(): void {
         this.workerPool.setReceiver(Constants.COMMUNITY_CONTRACT,
             (contractId: string, parentState: any) => {
-                if(parentState) {
-                    let state = parentState.state;
-                    if(!state) {
-                        return;
-                    }
-                    if(state.tokens) {
-                        const tokens: Array<any> = state.tokens;
-                        tokens.forEach((item) => {
-                            this.gcpDatastoreService.saveFull<CommunityTokensDatastore>({
-                                kind: DatastoreKinds.COMMUNITY_TOKENS,
-                                id: item.id,
-                                data: {
-                                    contractId: item.id,
-                                    type: item.type,
-                                    lister: item.lister
-                                }
-                            });
-                        })
-                    }
-                    if(state.people) {
-                        const users: Array<any> = state.people;
-                        users.forEach(async (item) => {
-                            const kind = DatastoreKinds.COMMUNITY_PEOPLE;
-                            const id = item.username;
-                            const addresses = ((item.addresses || []) as string[]).join(",");
-
-                            const getSingle = await this.gcpDatastoreService.getSingle<CommunityPeopleDatastore>(this.gcpDatastoreService.createKey(kind, id));
-                            if(getSingle && getSingle.addresses !== addresses) {
-                                this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
-                                    kind: kind,
-                                    id: id,
-                                    data: {
-                                        username: id,
-                                        addresses: addresses
-                                    }
-                                });
-                            }
-                        })
-                    }
-                }
+                this.processCommunityContract(contractId, parentState);
             }
         );
     }
 
+    private async processCommunityContract(contractId: string, parentState: any) {
+        if(parentState) {
+            let state = parentState.state;
+            if(!state) {
+                return;
+            }
+            if(state.tokens) {
+                const tokens: Array<any> = state.tokens;
+                await Promise.allSettled(tokens.map(async (item) => {
+                    await this.gcpDatastoreService.saveFull<CommunityTokensDatastore>({
+                        kind: DatastoreKinds.COMMUNITY_TOKENS,
+                        id: item.id,
+                        data: {
+                            contractId: item.id,
+                            type: item.type,
+                            lister: item.lister
+                        }
+                    });
+                }));
+            }
+            if(state.people) {
+                const users: Array<any> = state.people;
+                await Promise.allSettled(users.map(async (item) => {
+                    const kind = DatastoreKinds.COMMUNITY_PEOPLE;
+                    const id = item.username;
+                    const addresses = ((item.addresses || []) as string[]).join(",");
+
+                    const getSingle = await this.gcpDatastoreService.getSingle<CommunityPeopleDatastore>(this.gcpDatastoreService.createKey(kind, id));
+                    if(!getSingle || getSingle && getSingle.addresses !== addresses) {
+                        await this.gcpDatastoreService.saveFull<CommunityPeopleDatastore>({
+                            kind: kind,
+                            id: id,
+                            data: {
+                                username: id,
+                                addresses: addresses
+                            }
+                        });
+                    }
+                }));
+            }
+        }
+    }
+
+    private async handleErrorContract(contractId: string, exception: any) {
+        console.error(exception);
+        await this.gcpDatastoreService.saveFull<DsFailedContracts>({
+            kind: DatastoreKinds.FAILED_CONTRACTS,
+            id: contractId,
+            data: {
+                contractId: contractId
+            }
+        });
+    }
+
+    private async handleFaultyContract(contractId: string) {
+        await this.gcpDatastoreService.saveFull<DsBlacklistedContracts>({
+            kind: DatastoreKinds.BLACKLISTED_CONTRACTS,
+            id: contractId,
+            data: {
+                contractId
+            }
+        });
+    }
+
+    private async deleteFromFailedContracts(contractId: string) {
+        const isContractMarkedAsFailed = await this.gcpDatastoreService.getSingle(
+            this.gcpDatastoreService.createKey(DatastoreKinds.FAILED_CONTRACTS, contractId)
+        );
+        if(isContractMarkedAsFailed) {
+            await this.gcpDatastoreService.delete(this.gcpDatastoreService.createKey(DatastoreKinds.FAILED_CONTRACTS, contractId));
+        }
+    }
+
     /**
-     * Recover all the contracts and send them to the worker pool
+     * Recover all the contracts (failed and recoverable) and send them to the worker pool
      */
     private async recoverContracts() {
-        const contracts = await this.recoverableContractDatastoreService.getAllAndClean();
+        const contracts = [
+            ...await this.recoverableContractDatastoreService.getAllAndClean(),
+            ...await this.recoverableContractDatastoreService.getAllAndClean('failed')
+        ];
         contracts.forEach((item) => {
             this.sendContractToWorkerPool(item.contractId);
         });
+    }
+
+    private async initializeBlacklistedContracts() {
+        this.workerPool.blackListedContracts = (await this.gcpDatastoreService.getAll(DatastoreKinds.BLACKLISTED_CONTRACTS))
+            .flat()
+            .filter(item => item.contractId)
+            .map(item => item.contractId);
     }
 }

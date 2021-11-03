@@ -13,6 +13,7 @@ import {addHoursToDate} from "../../utils/commons";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
 export type OnError = (contractId: string, exception: any) => void | Promise<void>;
+export type OnFaulty = (contractId: string) => void | Promise<void>;
 
 /**
  * This class is known as the worker pool.
@@ -30,8 +31,11 @@ export class WorkerPool {
     workerFeedback: Array<WorkerFeedback> = [];
     timers: Array<any> = [];
 
+    blackListedContracts: Array<string> = [];
+
     private globalOnReceived: OnReceived;
     private globalOnError: OnError;
+    private globalFaultyContract: OnFaulty;
     private receivers: Map<string, OnReceived> = new Map<string, OnReceived>();
 
     private readonly WORKER_POOL_HOURS_EXPIRATION_FEEDBACK = 1;
@@ -54,7 +58,8 @@ export class WorkerPool {
         // @ts-ignore
         let returnData: WorkerProcessPostResult = {};
 
-        if(!this.currentContractIdsWorkedOn.some(item => item === contractId)) {
+        const isContractBlackListed = this.isContractBlackListed(contractId);
+        if(!this.currentContractIdsWorkedOn.some(item => item === contractId) && !isContractBlackListed) {
             const {autoScale, contractsPerWorker} = this.configuration;
             const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker && item.distributable);
             let workerToUse: number | undefined = undefined;
@@ -85,8 +90,10 @@ export class WorkerPool {
                 };
             }
         } else {
-            this.sendContractToQueue(contractId);
-            returnData.state = 'CURRENTLY_PROCESSING';
+            if(!isContractBlackListed) {
+                this.sendContractToQueue(contractId);
+            }
+            returnData.state = isContractBlackListed ? 'BLACKLISTED' : 'CURRENTLY_PROCESSING';
         }
 
         return returnData;
@@ -117,6 +124,14 @@ export class WorkerPool {
      */
     public setOnError(callback: OnError): void {
         this.globalOnError = callback;
+    }
+
+    /**
+     * Sets a callback to be applied when a faulty contract is found (contract which is taking too long to be processed).
+     * @param callback
+     */
+    public setOnFaulty(callback: OnFaulty): void {
+        this.globalFaultyContract = callback;
     }
 
     /**
@@ -183,6 +198,11 @@ export class WorkerPool {
      * @param workerToUse
      */
     private sendContractToWorker(contractId: string, workerToUse: number): void {
+        const isContractBlackListed = this.isContractBlackListed(contractId);
+        if(isContractBlackListed) {
+            return;
+        }
+
         const stat = this.updateStats(workerToUse, (localStats) => {
             return {
                 ...localStats,
@@ -275,6 +295,13 @@ export class WorkerPool {
             this.currentContractIdsWorkedOn = this.currentContractIdsWorkedOn.filter(contract => contract !== contractId);
         }
 
+        const cleanDedicatedWorker = (workerId: number) => {
+            const index = this.stats.findIndex((item) => !item.distributable && item.workerId === workerId);
+            if(index >= 0) {
+                this.hardClean(workerId);
+            }
+        }
+
         worker.addEventListener('message', async e => {
             const data = e.data;
             const type = data.type;
@@ -316,6 +343,11 @@ export class WorkerPool {
             decreaseContractsOnProcessing();
             removeContractLock(contractId);
             resolvePromises(contractId, data, isError);
+
+            if(!isError) {
+                cleanDedicatedWorker(workerId);
+            }
+
         });
 
         worker.addEventListener("error", (error) => {
@@ -362,6 +394,10 @@ export class WorkerPool {
         this.timers[2] = setInterval(() => {
             this.processWorkerFeedback();
         }, (1000 * 60) * 60);
+
+        this.timers[3] = setInterval(() => {
+            this.processDedicatedWorkers();
+        }, (1000 * 60) * 20);
     }
 
     /**
@@ -401,10 +437,9 @@ export class WorkerPool {
      */
     private processWorkerFeedback(): void {
         this.workerFeedback.forEach((feedback) => {
-            const lastActivityDate = new Date(feedback.lastUpdated);
-            const expirationActivityDate = addHoursToDate(lastActivityDate, this.WORKER_POOL_HOURS_EXPIRATION_FEEDBACK);
-            const currentDate = new Date();
-            if(currentDate > expirationActivityDate) {
+            const isActivityExpired = this.isWorkerActivityExpired(feedback.lastUpdated);
+            const isDedicated = this.isWorkerDedicated(feedback.workerId);
+            if(isActivityExpired && !isDedicated) {
                 const faultyContract = feedback.currentContract;
                 if(faultyContract) {
                     const workerToUse = this.createWorker(true, false);
@@ -439,6 +474,39 @@ export class WorkerPool {
     }
 
     /**
+     * Clean workers that are dedicated and have not reported anything
+     */
+    private processDedicatedWorkers() {
+        const dedicatedWorkerIds = this.stats.filter((item) => !item.distributable)
+                                             .map((item) => item.workerId);
+
+        dedicatedWorkerIds.forEach((workerId) => {
+            const feedBackIndex = this.workerFeedback.findIndex((item) => item.workerId === workerId);
+            const feedback = this.workerFeedback[feedBackIndex];
+            const lastUpdated = feedback.lastUpdated;
+            const feedbackFaultyContract = feedback.currentContract;
+            const isExpired = this.isWorkerActivityExpired(lastUpdated, 2);
+            if(isExpired) {
+                if(feedbackFaultyContract && this.globalFaultyContract) {
+                    this.globalFaultyContract(feedbackFaultyContract);
+                }
+                this.hardClean(workerId);
+            }
+        });
+    }
+
+    private isWorkerDedicated(workerId: number): boolean {
+        return this.stats.findIndex((item) => item.workerId === workerId && !item.distributable) >= 0;
+    }
+
+    private isWorkerActivityExpired(lastUpdated: Date, expirationHours?: number) {
+        const lastActivityDate = new Date(lastUpdated);
+        const expirationActivityDate = addHoursToDate(lastActivityDate, expirationHours || this.WORKER_POOL_HOURS_EXPIRATION_FEEDBACK);
+        const currentDate = new Date();
+        return (currentDate > expirationActivityDate);
+    }
+
+    /**
      * Creates a minimum of workers based on the pool configuration
      * @private
      */
@@ -447,6 +515,10 @@ export class WorkerPool {
         for(let i = 0; i<=size; i++) {
             this.createWorker();
         }
+    }
+
+    private isContractBlackListed(contractId: string) {
+        return this.blackListedContracts.some((item) => item === contractId);
     }
 
 }

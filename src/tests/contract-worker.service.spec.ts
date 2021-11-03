@@ -260,4 +260,20 @@ describe('Contract worker service spec', () => {
         cleanWorkerPool(contractWorkerService.workerPool);
     });
 
+    test('On contract faulty', async () => {
+        resetMockUps();
+
+        // @ts-ignore
+        await contractWorkerService.handleFaultyContract('ABCD');
+        expect(saveFull).toHaveBeenCalledWith({
+            kind: DatastoreKinds.BLACKLISTED_CONTRACTS,
+            id: 'ABCD',
+            data: {
+                contractId: 'ABCD'
+            }
+        });
+        cleanWorkerPool(contractWorkerService.workerPool);
+
+    });
+
 })

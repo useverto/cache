@@ -24,7 +24,7 @@ export interface WorkerResult extends PromiseContext {
 }
 
 export interface WorkerProcessPostResult {
-    state: 'CURRENTLY_PROCESSING' | 'ADDED_TO_QUEUE' | 'CONTRACT_SENT';
+    state: 'CURRENTLY_PROCESSING' | 'ADDED_TO_QUEUE' | 'CONTRACT_SENT' | 'BLACKLISTED';
     data?: any;
 }
 

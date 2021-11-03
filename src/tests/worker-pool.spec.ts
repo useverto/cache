@@ -124,7 +124,8 @@ describe('Worker Pool tests', () => {
 
         expect(spy).toHaveBeenCalled();
         expect(spy).toHaveBeenCalledWith({
-            contractId: "LAL"
+            contractId: "LAL",
+            workerToUse: 0
         });
         cleanWorkerPool(workerPool);
     });
@@ -260,4 +261,101 @@ describe('Worker Pool tests', () => {
 
         cleanWorkerPool(workerPool);
     });
+
+    test('processDedicatedWorkers', () => {
+        const workerPool = new WorkerPool({
+            size: 1,
+            contractsPerWorker: 1,
+            autoScale: true
+        });
+
+        workerPool.stats = [{
+            workerId: 2,
+            workerScaled: true,
+            distributable: false,
+            contractsOnProcessing: 1
+        }];
+        workerPool.workerFeedback = [{
+            workerId: 2,
+            lastUpdated: addHoursToDate(new Date(), -1),
+            currentContract: 'ABCD',
+            processedContracts: []
+        }]
+        workerPool.setOnFaulty(jest.fn());
+        // @ts-ignore
+        jest.spyOn(workerPool, 'hardClean');
+
+        // @ts-ignore
+        workerPool.processDedicatedWorkers();
+        // @ts-ignore
+        expect(workerPool.globalFaultyContract).not.toHaveBeenCalledWith('ABCD');
+        // @ts-ignore
+        expect(workerPool.hardClean).not.toHaveBeenCalled();
+        cleanWorkerPool(workerPool);
+    });
+
+    test('processDedicatedWorkers expired dedicated workers', () => {
+        const workerPool = new WorkerPool({
+            size: 1,
+            contractsPerWorker: 1,
+            autoScale: true
+        });
+
+        workerPool.stats = [{
+            workerId: 2,
+            workerScaled: true,
+            distributable: false,
+            contractsOnProcessing: 1
+        }];
+        workerPool.workerFeedback = [{
+            workerId: 2,
+            lastUpdated: addHoursToDate(new Date(), -2.1),
+            currentContract: 'ABCD',
+            processedContracts: []
+        }]
+        workerPool.setOnFaulty(jest.fn());
+        // @ts-ignore
+        jest.spyOn(workerPool, 'hardClean');
+
+        // @ts-ignore
+        workerPool.processDedicatedWorkers();
+        // @ts-ignore
+        expect(workerPool.globalFaultyContract).toHaveBeenCalledWith('ABCD');
+        // @ts-ignore
+        expect(workerPool.hardClean).toHaveBeenCalled();
+        cleanWorkerPool(workerPool);
+    });
+
+    test('is contract blacklisted', () => {
+        const workerPool = new WorkerPool({
+            size: 1,
+            contractsPerWorker: 1,
+            autoScale: true
+        });
+        workerPool.blackListedContracts = ["DFG"];
+        // @ts-ignore
+        expect(workerPool.isContractBlackListed("DFG")).toBeTruthy();
+        // @ts-ignore
+        expect(workerPool.isContractBlackListed("ABCD")).toBeFalsy();
+        cleanWorkerPool(workerPool);
+    });
+
+    test('Send contract to worker blacklisted', () => {
+        const workerPool = new WorkerPool({
+            size: 1,
+            contractsPerWorker: 1,
+            autoScale: true
+        });
+
+        workerPool.blackListedContracts = ["JP"]
+
+        // @ts-ignore
+        jest.spyOn(workerPool, 'sendContractToQueue');
+
+        let result = workerPool.processContractInWorker("JP");
+        expect(result.state).toBe("BLACKLISTED");
+        expect(workerPool.sendContractToQueue).not.toHaveBeenCalled();
+        cleanWorkerPool(workerPool);
+    });
+
 });

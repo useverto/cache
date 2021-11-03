@@ -11,6 +11,7 @@ import {ContractsAddressDatastore} from "../gcp-datastore/kind-interfaces/ds-con
 import {WorkerProcessPostResult} from "../../../worker-pool/model";
 import {RecoverableContractsDatastoreService} from "../../contracts-datastore/recoverable-contracts-datastore.service";
 import {DsFailedContracts} from "../gcp-datastore/kind-interfaces/ds-failed-contracts";
+import {DsBlacklistedContracts} from "../gcp-datastore/kind-interfaces/ds-blacklisted-contracts";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -27,7 +28,9 @@ export class ContractWorkerService {
         this.initializeWorker();
         this.initializeBehaviors();
         this.initializeCommunityContractHandler();
-        this.recoverContracts();
+        this.initializeBlacklistedContracts().then(() => {
+            this.recoverContracts();
+        });
     }
 
     /**
@@ -110,7 +113,11 @@ export class ContractWorkerService {
 
         this.workerPool.setOnError(async (contractId, exception) => {
             await this.handleErrorContract(contractId, exception);
-        })
+        });
+
+        this.workerPool.setOnFaulty(async (contractId: string) => {
+           await this.handleFaultyContract(contractId);
+        });
     }
 
     private async processOnReceive(contractId: string, state: any) {
@@ -225,6 +232,16 @@ export class ContractWorkerService {
         });
     }
 
+    private async handleFaultyContract(contractId: string) {
+        await this.gcpDatastoreService.saveFull<DsBlacklistedContracts>({
+            kind: DatastoreKinds.BLACKLISTED_CONTRACTS,
+            id: contractId,
+            data: {
+                contractId
+            }
+        });
+    }
+
     private async deleteFromFailedContracts(contractId: string) {
         const isContractMarkedAsFailed = await this.gcpDatastoreService.getSingle(
             this.gcpDatastoreService.createKey(DatastoreKinds.FAILED_CONTRACTS, contractId)
@@ -245,5 +262,12 @@ export class ContractWorkerService {
         contracts.forEach((item) => {
             this.sendContractToWorkerPool(item.contractId);
         });
+    }
+
+    private async initializeBlacklistedContracts() {
+        this.workerPool.blackListedContracts = (await this.gcpDatastoreService.getAll(DatastoreKinds.BLACKLISTED_CONTRACTS))
+            .flat()
+            .filter(item => item.contractId)
+            .map(item => item.contractId);
     }
 }

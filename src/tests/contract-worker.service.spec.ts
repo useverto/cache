@@ -14,7 +14,7 @@ describe('Contract worker service spec', () => {
     let saveContract = jest.fn();
     let getAllAndClean = jest.fn(() => []);
     let deletefn = jest.fn();
-    let getAll = jest.fn();
+    let getAll = jest.fn(() => []);
     let contractWorkerService: ContractWorkerService;
 
     const cleanWorkerPool = (pool: WorkerPool) => {
@@ -30,7 +30,7 @@ describe('Contract worker service spec', () => {
         saveContract = jest.fn();
         getAllAndClean = jest.fn(() => []);
         deletefn = jest.fn();
-        getAll = jest.fn();
+        getAll = jest.fn(() => []);
 
         // @ts-ignore
         contractWorkerService = new ContractWorkerService({

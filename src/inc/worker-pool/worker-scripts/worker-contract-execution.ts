@@ -5,7 +5,15 @@ const arweaveClientService = new ArweaveClientService();
 const contractService = new ContractService(arweaveClientService);
 
 addEventListener('message', async e => {
-    const {contractId} = e.data;
+    const { contractId, workerToUse } = e.data;
+
+    // @ts-ignore
+    postMessage({
+        contractId,
+        workerToUse,
+        type: 'feedback'
+    });
+
     try {
         console.log(`Processing ${contractId}`);
         const state = await contractService.processState(contractId);
@@ -13,6 +21,7 @@ addEventListener('message', async e => {
         postMessage({
             contractId,
             state,
+            workerToUse,
             type: 'result'
         });
         console.log(`Execution for ${contractId} has finished`);
@@ -22,6 +31,7 @@ addEventListener('message', async e => {
         postMessage({
             contractId,
             ex,
+            workerToUse,
             type: 'error'
         })
     }

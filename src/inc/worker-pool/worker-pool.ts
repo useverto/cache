@@ -1,6 +1,15 @@
-import {WorkerItem, WorkerPoolConfiguration, WorkerProcessPostResult, WorkerResult, WorkerStats} from "./model";
+import {
+    WorkerContracts,
+    WorkerFeedback,
+    WorkerItem,
+    WorkerPoolConfiguration,
+    WorkerProcessPostResult,
+    WorkerResult,
+    WorkerStats
+} from "./model";
 import Worker from 'web-worker';
 import path from "path";
+import {addHoursToDate} from "../../utils/commons";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
 export type OnError = (contractId: string, exception: any) => void | Promise<void>;
@@ -17,11 +26,15 @@ export class WorkerPool {
     stats: Array<WorkerStats> = [];
     promises: Array<WorkerResult> = [];
     currentContractIdsWorkedOn: Array<string> = [];
+    currentContractsInWorkers: Array<WorkerContracts> = [];
+    workerFeedback: Array<WorkerFeedback> = [];
     timers: Array<any> = [];
 
     private globalOnReceived: OnReceived;
     private globalOnError: OnError;
     private receivers: Map<string, OnReceived> = new Map<string, OnReceived>();
+
+    private readonly WORKER_POOL_HOURS_EXPIRATION_FEEDBACK = 1;
 
     constructor(private readonly configuration: WorkerPoolConfiguration) {
         this.initialize();
@@ -43,7 +56,7 @@ export class WorkerPool {
 
         if(!this.currentContractIdsWorkedOn.some(item => item === contractId)) {
             const {autoScale, contractsPerWorker} = this.configuration;
-            const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker);
+            const freeWorker = this.stats.find((item) => item.contractsOnProcessing < contractsPerWorker && item.distributable);
             let workerToUse: number | undefined = undefined;
 
             if (!freeWorker) {
@@ -135,9 +148,10 @@ export class WorkerPool {
     /**
      * Creates a worker and initializes its behaviors
      * @param workerScaled Whether the worker was created due to scalation
+     * @param distributable Whether worker accepts incoming contracts. Or contract execution should be invoked manually and not by pool.
      * @private
      */
-    private createWorker(workerScaled = false): number {
+    private createWorker(workerScaled = false, distributable = true): number {
         const worker = new Worker(
             path.join(__dirname, "./worker-scripts/worker-contract-execution.js"),
             {
@@ -157,7 +171,8 @@ export class WorkerPool {
         this.stats.push({
             workerId,
             contractsOnProcessing: 0,
-            workerScaled
+            workerScaled,
+            distributable
         });
         return workerId;
     }
@@ -176,8 +191,29 @@ export class WorkerPool {
         });
         if (stat) {
             this.workers[stat.workerId]?.worker?.postMessage({
-                contractId
+                contractId,
+                workerToUse
             });
+
+            const currentWorkerContractsCount = this.currentContractsInWorkers.find((item) => item.workerId === workerToUse);
+            if(currentWorkerContractsCount) {
+                currentWorkerContractsCount.contracts.push(contractId);
+            } else {
+                this.currentContractsInWorkers.push({
+                    workerId: workerToUse,
+                    contracts: [contractId]
+                });
+            }
+
+            const currentContractFeedback = this.workerFeedback.find((item) => item.workerId === workerToUse);
+            if(!currentContractFeedback) {
+                this.workerFeedback.push({
+                    workerId: workerToUse,
+                    lastUpdated: new Date(),
+                    processedContracts: []
+                })
+            }
+
             this.currentContractIdsWorkedOn.push(contractId);
         }
     }
@@ -243,10 +279,25 @@ export class WorkerPool {
             const data = e.data;
             const type = data.type;
             const contractId = data.contractId;
+            const workerId = data.workerToUse;
             const exception = data.ex;
             const state = data.state;
 
+            const feedback = this.workerFeedback.findIndex((item) => item.workerId === workerId);
             const isError = type === 'error';
+            const isFeedback = type === 'feedback';
+
+            if(isFeedback) {
+                if(!(this.workerFeedback[feedback].processedContracts.some(item => contractId === item))) {
+                    this.workerFeedback[feedback].currentContract = contractId;
+                }
+                return;
+            }
+
+            if(!isError) {
+                this.workerFeedback[feedback].lastUpdated = new Date();
+                this.workerFeedback[feedback].processedContracts.push(contractId);
+            }
 
             if(this.globalOnReceived && !isError) {
                 await this.globalOnReceived(contractId, state);
@@ -307,6 +358,10 @@ export class WorkerPool {
         this.timers[1] = setInterval(() => {
             this.processQueue();
         }, 60000);
+
+        this.timers[2] = setInterval(() => {
+            this.processWorkerFeedback();
+        }, (1000 * 60) * 60);
     }
 
     /**
@@ -339,6 +394,48 @@ export class WorkerPool {
                 this.processContractInWorker(contractId);
             }
         );
+    }
+
+    /**
+     * Inspect the worker feedback and does re-adjustments as needed
+     */
+    private processWorkerFeedback(): void {
+        this.workerFeedback.forEach((feedback) => {
+            const lastActivityDate = new Date(feedback.lastUpdated);
+            const expirationActivityDate = addHoursToDate(lastActivityDate, this.WORKER_POOL_HOURS_EXPIRATION_FEEDBACK);
+            const currentDate = new Date();
+            if(currentDate > expirationActivityDate) {
+                const faultyContract = feedback.currentContract;
+                if(faultyContract) {
+                    const workerToUse = this.createWorker(true, false);
+                    this.sendContractToWorker(faultyContract, workerToUse);
+                }
+                const workerContractsInformation = this.currentContractsInWorkers.findIndex((item) => item.workerId === feedback.workerId);
+
+                if(workerContractsInformation >= 0) {
+                    const contractsToBeProcessed = [...this.currentContractsInWorkers[workerContractsInformation].contracts];
+                    const contractsProcessed = [...feedback.processedContracts];
+                    const unprocessedContracts = contractsToBeProcessed.filter((o) => contractsProcessed.indexOf(o) === -1)
+                        .filter(item => item !== faultyContract);
+                    unprocessedContracts.forEach((ctrId) => {
+                        this.sendContractToQueue(ctrId);
+                    });
+                }
+
+                this.hardClean(feedback.workerId);
+            }
+        });
+    }
+
+    /**
+     * Executes a hard clean of an specific worker
+     */
+    private hardClean(workerToUse: number) {
+        this.workers[workerToUse]?.worker?.terminate();
+        this.currentContractsInWorkers = this.currentContractsInWorkers.filter(item => item.workerId !== workerToUse);
+        this.workerFeedback = this.workerFeedback.filter(item => item.workerId !== workerToUse);
+        this.stats = this.stats.filter(item => item.workerId !== workerToUse);
+        this.workers = this.workers.filter(item => item.id !== workerToUse);
     }
 
     /**

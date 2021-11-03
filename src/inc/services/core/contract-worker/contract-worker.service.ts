@@ -28,9 +28,8 @@ export class ContractWorkerService {
         this.initializeWorker();
         this.initializeBehaviors();
         this.initializeCommunityContractHandler();
-        this.initializeBlacklistedContracts().then(() => {
-            this.recoverContracts();
-        });
+        this.initializeBlacklistedContracts();
+        this.recoverContracts();
     }
 
     /**

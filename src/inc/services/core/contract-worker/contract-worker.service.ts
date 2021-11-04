@@ -67,7 +67,8 @@ export class ContractWorkerService {
             contractsQueue: this.workerPool.contractsQueue.length,
             workers: this.workerPool.workers.length,
             scaledWorkers: this.workerPool.stats.filter((item) => item.workerScaled).length,
-            currentContractIdsWorkedOn: this.workerPool.currentContractIdsWorkedOn.length
+            currentContractIdsWorkedOn: this.workerPool.currentContractIdsWorkedOn.length,
+            blacklistedContracts: this.workerPool.blackListedContracts?.length
         }
     }
 

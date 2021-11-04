@@ -161,6 +161,17 @@ export class WorkerPool {
     }
 
     /**
+     * Add a timer to the timer schedule
+     * @param fn
+     * @param interval
+     */
+    public addTimer(fn: () => void | Promise<void>, interval: number) {
+        this.timers[this.timers.length + 1] = setInterval(() => {
+            fn();
+        }, interval);
+    }
+
+    /**
      * Creates a worker and initializes its behaviors
      * @param workerScaled Whether the worker was created due to scalation
      * @param distributable Whether worker accepts incoming contracts. Or contract execution should be invoked manually and not by pool.

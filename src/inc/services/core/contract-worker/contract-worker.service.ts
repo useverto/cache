@@ -30,6 +30,7 @@ export class ContractWorkerService {
         this.initializeCommunityContractHandler();
         this.initializeBlacklistedContracts();
         this.recoverContracts();
+        this.initializeCustomTimers();
     }
 
     /**
@@ -269,4 +270,9 @@ export class ContractWorkerService {
             .filter(item => item.contractId)
             .map(item => item.contractId);
     }
+
+    private async initializeCustomTimers() {
+        this.workerPool.addTimer(this.initializeBlacklistedContracts, 60000);
+    }
+
 }

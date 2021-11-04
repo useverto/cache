@@ -1,8 +1,11 @@
 import { ArweaveClientService } from "../../services/core/arweave/arweave-client.service";
 import { ContractService } from "../../services/contracts/contract.service";
+import {cleanExecution} from "../../../utils/commons";
 
 const arweaveClientService = new ArweaveClientService();
 const contractService = new ContractService(arweaveClientService);
+
+cleanExecution();
 
 addEventListener('message', async e => {
     const { contractId, workerToUse } = e.data;

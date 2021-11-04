@@ -277,7 +277,12 @@ describe('Contract worker service spec', () => {
             }
         });
         cleanWorkerPool(contractWorkerService.workerPool);
-
     });
+
+    test('5 timers', () => {
+        resetMockUps();
+        expect(contractWorkerService.workerPool.timers.length).toBe(5);
+        cleanWorkerPool(contractWorkerService.workerPool);
+    })
 
 })

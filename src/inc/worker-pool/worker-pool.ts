@@ -394,21 +394,21 @@ export class WorkerPool {
      * @private
      */
     private setTimers(): void {
-        this.timers[0] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.deleteScaledWorkers();
-        }, 60000);
+        }, 60000));
 
-        this.timers[1] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.processQueue();
-        }, 60000);
+        }, 60000));
 
-        this.timers[2] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.processWorkerFeedback();
-        }, (1000 * 60) * 60);
+        }, (1000 * 60) * 60));
 
-        this.timers[3] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.processDedicatedWorkers();
-        }, (1000 * 60) * 20);
+        }, (1000 * 60) * 20));
     }
 
     /**

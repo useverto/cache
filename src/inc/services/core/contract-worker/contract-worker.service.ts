@@ -30,6 +30,7 @@ export class ContractWorkerService {
         this.initializeCommunityContractHandler();
         this.initializeBlacklistedContracts();
         this.recoverContracts();
+        this.initializeCustomTimers();
     }
 
     /**
@@ -66,7 +67,8 @@ export class ContractWorkerService {
             contractsQueue: this.workerPool.contractsQueue.length,
             workers: this.workerPool.workers.length,
             scaledWorkers: this.workerPool.stats.filter((item) => item.workerScaled).length,
-            currentContractIdsWorkedOn: this.workerPool.currentContractIdsWorkedOn.length
+            currentContractIdsWorkedOn: this.workerPool.currentContractIdsWorkedOn.length,
+            blacklistedContracts: this.workerPool.blackListedContracts?.length
         }
     }
 
@@ -269,4 +271,9 @@ export class ContractWorkerService {
             .filter(item => item.contractId)
             .map(item => item.contractId);
     }
+
+    private async initializeCustomTimers() {
+        this.workerPool.addTimer(() => this.initializeBlacklistedContracts(), 60000);
+    }
+
 }

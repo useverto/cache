@@ -7,3 +7,7 @@ export const sleep = (ms: number) => {
 export const addHoursToDate = (date: Date, hours: number): Date => {
     return new Date(new Date(date).setHours(date.getHours() + hours));
 }
+
+export const cleanExecution = () => {
+    process.env = {};
+}

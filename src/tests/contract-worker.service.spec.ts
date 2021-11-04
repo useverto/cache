@@ -97,7 +97,8 @@ describe('Contract worker service spec', () => {
             contractsQueue: 1,
             workers: 16,
             scaledWorkers: 1,
-            currentContractIdsWorkedOn: 2
+            currentContractIdsWorkedOn: 2,
+            blacklistedContracts: 0
         })
         cleanWorkerPool(contractWorkerService.workerPool);
     });
@@ -276,7 +277,12 @@ describe('Contract worker service spec', () => {
             }
         });
         cleanWorkerPool(contractWorkerService.workerPool);
-
     });
+
+    test('5 timers', () => {
+        resetMockUps();
+        expect(contractWorkerService.workerPool.timers.length).toBe(5);
+        cleanWorkerPool(contractWorkerService.workerPool);
+    })
 
 })

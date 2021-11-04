@@ -161,6 +161,17 @@ export class WorkerPool {
     }
 
     /**
+     * Add a timer to the timer schedule
+     * @param fn
+     * @param interval
+     */
+    public addTimer(fn: () => void | Promise<void>, interval: number) {
+        this.timers.push(setInterval(() => {
+            fn();
+        }, interval));
+    }
+
+    /**
      * Creates a worker and initializes its behaviors
      * @param workerScaled Whether the worker was created due to scalation
      * @param distributable Whether worker accepts incoming contracts. Or contract execution should be invoked manually and not by pool.
@@ -383,21 +394,21 @@ export class WorkerPool {
      * @private
      */
     private setTimers(): void {
-        this.timers[0] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.deleteScaledWorkers();
-        }, 60000);
+        }, 60000));
 
-        this.timers[1] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.processQueue();
-        }, 60000);
+        }, 60000));
 
-        this.timers[2] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.processWorkerFeedback();
-        }, (1000 * 60) * 60);
+        }, (1000 * 60) * 60));
 
-        this.timers[3] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             this.processDedicatedWorkers();
-        }, (1000 * 60) * 20);
+        }, (1000 * 60) * 20));
     }
 
     /**

@@ -273,7 +273,7 @@ export class ContractWorkerService {
     }
 
     private async initializeCustomTimers() {
-        this.workerPool.addTimer(this.initializeBlacklistedContracts, 60000);
+        this.workerPool.addTimer(() => this.initializeBlacklistedContracts(), 60000);
     }
 
 }

@@ -166,9 +166,9 @@ export class WorkerPool {
      * @param interval
      */
     public addTimer(fn: () => void | Promise<void>, interval: number) {
-        this.timers[this.timers.length + 1] = setInterval(() => {
+        this.timers.push(setInterval(() => {
             fn();
-        }, interval);
+        }, interval));
     }
 
     /**

@@ -220,6 +220,7 @@ export class WorkerPool {
                 contractsOnProcessing: localStats.contractsOnProcessing + 1
             }
         });
+
         if (stat) {
             this.workers[stat.workerId]?.worker?.postMessage({
                 contractId,
@@ -435,6 +436,11 @@ export class WorkerPool {
      */
     private processQueue(): void {
         const temporaryList = [...this.contractsQueue];
+
+        if(this.workers.length <= 0) {
+            this.initialize();
+        }
+
         temporaryList.forEach(
             (contractId) => {
                 this.contractsQueue = this.contractsQueue.filter(item => item !== contractId);
@@ -450,7 +456,8 @@ export class WorkerPool {
         this.workerFeedback.forEach((feedback) => {
             const isActivityExpired = this.isWorkerActivityExpired(feedback.lastUpdated);
             const isDedicated = this.isWorkerDedicated(feedback.workerId);
-            if(isActivityExpired && !isDedicated) {
+            const contractsOnProcessing = this.findContractsOnProcessing(feedback.workerId) || 0;
+            if(isActivityExpired && !isDedicated && contractsOnProcessing > 0) {
                 const faultyContract = feedback.currentContract;
                 if(faultyContract) {
                     const workerToUse = this.createWorker(true, false);
@@ -468,20 +475,24 @@ export class WorkerPool {
                     });
                 }
 
-                this.hardClean(feedback.workerId);
+                this.hardClean(feedback.workerId, false);
             }
         });
     }
 
     /**
-     * Executes a hard clean of an specific worker
+     * Executes a hard clean of an specific worker, and creates a new worker
      */
-    private hardClean(workerToUse: number) {
+    private hardClean(workerToUse: number, isDedicated: boolean = false) {
         this.workers[workerToUse]?.worker?.terminate();
         this.currentContractsInWorkers = this.currentContractsInWorkers.filter(item => item.workerId !== workerToUse);
         this.workerFeedback = this.workerFeedback.filter(item => item.workerId !== workerToUse);
         this.stats = this.stats.filter(item => item.workerId !== workerToUse);
         this.workers = this.workers.filter(item => item.id !== workerToUse);
+
+        if(!isDedicated) {
+            this.createWorker();
+        }
     }
 
     /**
@@ -501,7 +512,7 @@ export class WorkerPool {
                 if(feedbackFaultyContract && this.globalFaultyContract) {
                     this.globalFaultyContract(feedbackFaultyContract);
                 }
-                this.hardClean(workerId);
+                this.hardClean(workerId, true);
             }
         });
     }
@@ -530,6 +541,10 @@ export class WorkerPool {
 
     private isContractBlackListed(contractId: string) {
         return this.blackListedContracts.some((item) => item === contractId);
+    }
+
+    private findContractsOnProcessing(workerId: number): number | undefined {
+        return this.stats.find((item) => item.workerId === workerId)?.contractsOnProcessing;
     }
 
 }

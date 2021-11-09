@@ -17,8 +17,10 @@ describe('Worker Pool tests', () => {
         pool.timers.forEach(timer => clearInterval(timer));
     }
 
+    let workerPool: WorkerPool;
+
     test('Create a worker pool', () => {
-       const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
            size: 2,
            contractsPerWorker: 1,
            autoScale: true
@@ -29,7 +31,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Do not send contracts to workers if its processing', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 2,
             contractsPerWorker: 1,
             autoScale: true
@@ -44,7 +46,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Not workers available with free scaling', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 2,
             contractsPerWorker: 1,
             autoScale: true
@@ -62,7 +64,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Not workers available with no scaling', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 2,
             contractsPerWorker: 1,
             autoScale: false
@@ -78,7 +80,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Send contract to worker', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -93,7 +95,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Send contract to worker and have called', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -111,7 +113,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Send contract to worker and have called with post message', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -176,11 +178,19 @@ describe('Worker Pool tests', () => {
     });
 
     test('processWorkerFeedback', async () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
         });
+        workerPool.stats = [
+            {
+                workerId: 0,
+                contractsOnProcessing: 1,
+                workerScaled: true,
+                distributable: false
+            }
+        ]
         workerPool.currentContractsInWorkers = [
             {
                 workerId: 0,
@@ -217,11 +227,19 @@ describe('Worker Pool tests', () => {
     });
 
     test('processWorkerFeedback expired contract', async () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
         });
+        workerPool.stats = [
+            {
+                workerId: 0,
+                contractsOnProcessing: 1,
+                workerScaled: true,
+                distributable: true
+            }
+        ]
         workerPool.currentContractsInWorkers = [
             {
                 workerId: 0,
@@ -257,13 +275,13 @@ describe('Worker Pool tests', () => {
         expect(workerPool.sendContractToQueue).toHaveBeenCalledTimes(1);
 
         // @ts-ignore
-        expect(workerPool.hardClean).toHaveBeenCalledWith(0);
+        expect(workerPool.hardClean).toHaveBeenCalledWith(0, false);
 
         cleanWorkerPool(workerPool);
     });
 
     test('processDedicatedWorkers', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -272,7 +290,7 @@ describe('Worker Pool tests', () => {
         workerPool.stats = [{
             workerId: 2,
             workerScaled: true,
-            distributable: false,
+            distributable: true,
             contractsOnProcessing: 1
         }];
         workerPool.workerFeedback = [{
@@ -295,7 +313,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('processDedicatedWorkers expired dedicated workers', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -327,7 +345,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('is contract blacklisted', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -341,7 +359,7 @@ describe('Worker Pool tests', () => {
     });
 
     test('Send contract to worker blacklisted', () => {
-        const workerPool = new WorkerPool({
+        workerPool = new WorkerPool({
             size: 1,
             contractsPerWorker: 1,
             autoScale: true
@@ -358,4 +376,7 @@ describe('Worker Pool tests', () => {
         cleanWorkerPool(workerPool);
     });
 
+    afterAll(() => {
+        cleanWorkerPool(workerPool);
+    })
 });

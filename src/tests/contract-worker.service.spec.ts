@@ -285,4 +285,8 @@ describe('Contract worker service spec', () => {
         cleanWorkerPool(contractWorkerService.workerPool);
     })
 
+    afterAll(() => {
+        cleanWorkerPool(contractWorkerService.workerPool);
+    });
+
 })

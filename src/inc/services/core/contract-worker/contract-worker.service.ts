@@ -111,7 +111,6 @@ export class ContractWorkerService {
      */
     private initializeBehaviors(): void {
         this.workerPool.setOnReceived(async (contractId, state) => {
-            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
             await this.processOnReceive(contractId, state);
         });
 
@@ -131,6 +130,10 @@ export class ContractWorkerService {
         await this.deleteFromFailedContracts(contractId);
         await this.uploadAddress(contractId, state);
         const realState = state?.state;
+        const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
+        if(!getSingle) {
+            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
+        }
         await this.gcpDatastoreService.saveFull<ContractsDatastore>({
             kind: DatastoreKinds.CONTRACTS,
             id: contractId,

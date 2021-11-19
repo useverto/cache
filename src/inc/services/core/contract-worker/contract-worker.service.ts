@@ -12,6 +12,7 @@ import {WorkerProcessPostResult} from "../../../worker-pool/model";
 import {RecoverableContractsDatastoreService} from "../../contracts-datastore/recoverable-contracts-datastore.service";
 import {DsFailedContracts} from "../gcp-datastore/kind-interfaces/ds-failed-contracts";
 import {DsBlacklistedContracts} from "../gcp-datastore/kind-interfaces/ds-blacklisted-contracts";
+import {MetricType, WorkerPoolMetrics} from "../../../worker-pool/worker-pool-metrics";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -31,6 +32,7 @@ export class ContractWorkerService {
         this.initializeBlacklistedContracts();
         this.recoverContracts();
         this.initializeCustomTimers();
+        WorkerPoolMetrics.initializeTimers(gcpDatastoreService);
     }
 
     /**
@@ -109,14 +111,17 @@ export class ContractWorkerService {
      */
     private initializeBehaviors(): void {
         this.workerPool.setOnReceived(async (contractId, state) => {
+            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
             await this.processOnReceive(contractId, state);
         });
 
         this.workerPool.setOnError(async (contractId, exception) => {
+            WorkerPoolMetrics.addMetric(MetricType.FAILED_CONTRACTS, (current) => current + 1);
             await this.handleErrorContract(contractId, exception);
         });
 
         this.workerPool.setOnFaulty(async (contractId: string) => {
+            WorkerPoolMetrics.addMetric(MetricType.BLACKLISTED_CONTRACTS, (current) => current + 1);
            await this.handleFaultyContract(contractId);
         });
     }
@@ -154,6 +159,7 @@ export class ContractWorkerService {
                 const key = `${contractId}-${addressId}`;
                 const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(kind, key));
                 if(!getSingle) {
+                    WorkerPoolMetrics.addMetric(MetricType.ADDRESS_RELATIONSHIP, (current) => current + 1);
                     await this.gcpDatastoreService.saveFull<ContractsAddressDatastore>({
                         kind: kind,
                         id: key,
@@ -216,6 +222,10 @@ export class ContractWorkerService {
                                 addresses: addresses
                             }
                         });
+                    }
+
+                    if(!getSingle) {
+                        WorkerPoolMetrics.addMetric(MetricType.NEW_PEOPLE, (current) => current + 1);
                     }
                 }));
             }

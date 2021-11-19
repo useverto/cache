@@ -4,6 +4,7 @@ import {clearInterval} from "timers";
 import {Constants} from "../inc/constants";
 import spyOn = jest.spyOn;
 import {DatastoreKinds} from "../inc/services/core/gcp-datastore/model";
+import {WorkerPoolMetrics} from "../inc/worker-pool/worker-pool-metrics";
 
 describe('Contract worker service spec', () => {
 
@@ -18,6 +19,7 @@ describe('Contract worker service spec', () => {
     let contractWorkerService: ContractWorkerService;
 
     const cleanWorkerPool = (pool: WorkerPool) => {
+        WorkerPoolMetrics.cleanTimers();
         pool.workers.forEach(item => item.worker.terminate());
         pool.timers.forEach(timer => clearInterval(timer));
     }

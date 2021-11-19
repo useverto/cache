@@ -10,6 +10,7 @@ import {
 import Worker from 'web-worker';
 import path from "path";
 import {addHoursToDate} from "../../utils/commons";
+import {MetricType, WorkerPoolMetrics} from "./worker-pool-metrics";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
 export type OnError = (contractId: string, exception: any) => void | Promise<void>;
@@ -200,6 +201,11 @@ export class WorkerPool {
             workerScaled,
             distributable
         });
+
+        if(workerScaled) {
+            WorkerPoolMetrics.addMetric(MetricType.SCALED_WORKERS, (current) => current + 1);
+        }
+
         return workerId;
     }
 

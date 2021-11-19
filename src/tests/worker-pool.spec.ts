@@ -1,5 +1,4 @@
 import {WorkerPool} from "../inc/worker-pool/worker-pool";
-import {clearInterval} from "timers";
 import {ExceptionHandlerService} from "../inc/services/core/handlers/exception-handler";
 import {addHoursToDate} from "../utils/commons";
 
@@ -13,8 +12,8 @@ const setProperty = (object, property, value) => {
 describe('Worker Pool tests', () => {
 
     const cleanWorkerPool = (pool: WorkerPool) => {
-        pool.workers.forEach(item => item.worker.terminate());
         pool.timers.forEach(timer => clearInterval(timer));
+        pool.workers.forEach(item => item.worker.terminate());
     }
 
     let workerPool: WorkerPool;

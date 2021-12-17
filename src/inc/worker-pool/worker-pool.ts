@@ -11,6 +11,7 @@ import Worker from 'web-worker';
 import path from "path";
 import {addHoursToDate} from "../../utils/commons";
 import {MetricType, WorkerPoolMetrics} from "./worker-pool-metrics";
+import {Constants} from "../constants";
 
 export type OnReceived = (contractId: string, state: any) => void | Promise<void>;
 export type OnError = (contractId: string, exception: any) => void | Promise<void>;
@@ -515,7 +516,9 @@ export class WorkerPool {
             const feedbackFaultyContract = feedback.currentContract;
             const isExpired = this.isWorkerActivityExpired(lastUpdated, 2);
             if(isExpired) {
-                if(feedbackFaultyContract && this.globalFaultyContract) {
+                if(feedbackFaultyContract
+                    && this.globalFaultyContract
+                    && feedbackFaultyContract !== Constants.COMMUNITY_CONTRACT) {
                     this.globalFaultyContract(feedbackFaultyContract);
                 }
                 this.hardClean(workerId, true);

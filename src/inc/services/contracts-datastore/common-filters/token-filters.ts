@@ -12,3 +12,8 @@ export const CollectionsFilter: QueryableFilter = {
     value: 'collection'
 };
 
+export const CommunitiesFilter: QueryableFilter = {
+    property: 'type',
+    operator: '=',
+    value: 'community'
+};

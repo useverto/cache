@@ -7,6 +7,7 @@ import {
 } from "../../inc/services/contracts-datastore/common-filters/token-filters";
 import {QueryResult, QueryResultBase} from "../../inc/services/core/gcp-datastore/model";
 import {CommunityTokensDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-community-tokens";
+import {BalancesDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-balances";
 
 @Controller('token')
 export class SiteController {
@@ -64,6 +65,46 @@ export class SiteController {
         const finalEntities = [
             ...communities.entities
         ].sort(() => Math.random() - Math.random()).slice(0, intLimit);
+
+        return {
+            entities: finalEntities,
+            resultsStatus: finalEntities.length > 0 ? 'FOUND' : 'EMPTY'
+        }
+    }
+
+    @Get('communities/top')
+    public async getTopCommunities(@Query('limit') limit: string): Promise<QueryResultBase<BalancesDatastore>> {
+        let intLimit = parseInt(limit || '4');
+        intLimit = intLimit > 10 ? 10 : intLimit;
+
+        const communities = await this.tokensDatastoreService.queryBalances({
+            limit: intLimit,
+            order: ['balanceLength', {
+                descending: true
+            }]
+        });
+
+        const finalEntities = [
+            ...communities.entities
+        ];
+
+        return {
+            entities: finalEntities,
+            resultsStatus: finalEntities.length > 0 ? 'FOUND' : 'EMPTY'
+        }
+    }
+
+    @Get('communities/balances')
+    public async getAllComBalances(): Promise<QueryResultBase<BalancesDatastore>> {
+        const communities = await this.tokensDatastoreService.queryBalances({
+            order: ['balanceLength', {
+                descending: true
+            }]
+        });
+
+        const finalEntities = [
+            ...communities.entities
+        ];
 
         return {
             entities: finalEntities,

@@ -13,6 +13,7 @@ import {RecoverableContractsDatastoreService} from "../../contracts-datastore/re
 import {DsFailedContracts} from "../gcp-datastore/kind-interfaces/ds-failed-contracts";
 import {DsBlacklistedContracts} from "../gcp-datastore/kind-interfaces/ds-blacklisted-contracts";
 import {MetricType, WorkerPoolMetrics} from "../../../worker-pool/worker-pool-metrics";
+import {BalancesDatastore} from "../gcp-datastore/kind-interfaces/ds-balances";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -129,6 +130,7 @@ export class ContractWorkerService {
         await this.gcpContractStorage.uploadState(contractId, state, true);
         await this.deleteFromFailedContracts(contractId);
         await this.uploadAddress(contractId, state);
+        await this.uploadBalanceNumbers(contractId, state);
         const realState = state?.state;
         const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
         if(!getSingle) {
@@ -173,6 +175,22 @@ export class ContractWorkerService {
                     });
                 }
             }));
+        }
+    }
+
+    private async uploadBalanceNumbers(contractId: string, state: any): Promise<void> {
+        const balancesInState = state?.state?.balances;
+        const kind = DatastoreKinds.BALANCES;
+        if(balancesInState) {
+            let balancesLength = Object.keys(balancesInState).length;
+            await this.gcpDatastoreService.saveFull<BalancesDatastore>({
+                kind: kind,
+                id: contractId,
+                data: {
+                    contractId: contractId,
+                    balanceLength: balancesLength
+                }
+            });
         }
     }
 

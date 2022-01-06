@@ -1,5 +1,5 @@
 import {entity} from "@google-cloud/datastore/build/src/entity";
-import {Operator} from "@google-cloud/datastore/build/src/query";
+import {Operator, OrderOptions} from "@google-cloud/datastore/build/src/query";
 
 export enum DatastoreKinds {
     CONTRACTS = "CONTRACTS",
@@ -9,7 +9,8 @@ export enum DatastoreKinds {
     RECOVERABLE_CONTRACTS = "RECOVERABLE_CONTRACTS",
     FAILED_CONTRACTS = "FAILED_CONTRACTS",
     BLACKLISTED_CONTRACTS = "BLACKLISTED_CONTRACTS",
-    METRICS = "METRICS"
+    METRICS = "METRICS",
+    BALANCES = "BALANCES"
 }
 
 export type DatastoreEntities = entity.Key | Array<entity.Key>;
@@ -35,6 +36,7 @@ export interface QueryableBase {
     limit?: number;
     offset?: number;
     filters?: Array<QueryableFilter>;
+    order?: [string, OrderOptions];
 }
 
 export interface Queryable extends QueryableBase {

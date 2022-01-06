@@ -133,7 +133,7 @@ export class GcpDatastoreService {
      */
     async invokeQuery<T = any>(query: Queryable): Promise<QueryResult<T>> {
         let gdQuery = this.datastoreInstance.createQuery(query.kind);
-        const { limit, offset, filters } = query;
+        const { limit, offset, filters, order } = query;
 
         if(limit) {
             gdQuery = gdQuery.limit(limit);
@@ -147,6 +147,10 @@ export class GcpDatastoreService {
             filters.forEach((filter) => {
                 gdQuery = gdQuery.filter(filter.property, filter.operator, filter.value);
             });
+        }
+
+        if(order) {
+            gdQuery = gdQuery.order(order[0], order[1]);
         }
 
         const data = await this.query(query.kind, (query) => gdQuery) || [];

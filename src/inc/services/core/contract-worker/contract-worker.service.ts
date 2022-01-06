@@ -181,7 +181,8 @@ export class ContractWorkerService {
     private async uploadBalanceNumbers(contractId: string, state: any): Promise<void> {
         const balancesInState = state?.state?.balances;
         const kind = DatastoreKinds.BALANCES;
-        if(balancesInState) {
+        const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.COMMUNITY_TOKENS, contractId));
+        if(balancesInState && getSingle && getSingle?.type === "community") {
             let balancesLength = Object.keys(balancesInState).length;
             await this.gcpDatastoreService.saveFull<BalancesDatastore>({
                 kind: kind,

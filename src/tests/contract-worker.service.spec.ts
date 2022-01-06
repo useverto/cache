@@ -248,11 +248,15 @@ describe('Contract worker service spec', () => {
         //@ts-ignore
         spyOn(contractWorkerService, 'uploadAddress');
         //@ts-ignore
+        spyOn(contractWorkerService, 'uploadBalanceNumbers');
+        //@ts-ignore
         await contractWorkerService.processOnReceive('__TEST__', state);
 
         expect(uploadState).toHaveBeenCalledWith('__TEST__', state, true);
         // @ts-ignore
         expect(contractWorkerService.uploadAddress).toHaveBeenCalled();
+        // @ts-ignore
+        expect(contractWorkerService.uploadBalanceNumbers).toHaveBeenCalled();
 
         expect(saveFull).toHaveBeenCalledWith(expect.objectContaining({
             kind: DatastoreKinds.CONTRACTS,

@@ -1,7 +1,7 @@
 import {Bucket, CreateBucketResponse, File, Storage} from "@google-cloud/storage";
 import {CreateBucketRequest} from "@google-cloud/storage/build/src/storage";
 import {Injectable} from "@nestjs/common";
-import {GcpCredentials} from "../../../gcp-credentials/gcp-credentials";
+import {GcpCredentials} from "verto-internals/services/gcp";
 import {FileSaveInfo} from "./model";
 import {GetResponse} from "@google-cloud/common/build/src/service-object";
 

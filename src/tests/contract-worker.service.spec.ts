@@ -3,7 +3,7 @@ import {WorkerPool} from "../inc/worker-pool/worker-pool";
 import {clearInterval} from "timers";
 import {Constants} from "../inc/constants";
 import spyOn = jest.spyOn;
-import {DatastoreKinds} from "../inc/services/core/gcp-datastore/model";
+import {DatastoreKinds} from "verto-internals/services/gcp";
 import {WorkerPoolMetrics} from "../inc/worker-pool/worker-pool-metrics";
 
 describe('Contract worker service spec', () => {

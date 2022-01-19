@@ -1,5 +1,4 @@
-import {GcpDatastoreService} from "../services/core/gcp-datastore/gcp-datastore.service";
-import {DatastoreKinds} from "../services/core/gcp-datastore/model";
+import {GcpDatastoreService, DatastoreKinds} from "verto-internals/services/gcp";
 import {clearInterval} from "timers";
 import {randomString} from "../../utils/commons";
 

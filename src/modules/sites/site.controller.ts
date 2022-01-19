@@ -5,7 +5,7 @@ import {
     CollectionsFilter,
     CommunitiesFilter
 } from "../../inc/services/contracts-datastore/common-filters/token-filters";
-import {QueryResult, QueryResultBase} from "../../inc/services/core/gcp-datastore/model";
+import {QueryResult, QueryResultBase} from "verto-internals/services/gcp";
 import {CommunityTokensDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-community-tokens";
 import {BalancesDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-balances";
 

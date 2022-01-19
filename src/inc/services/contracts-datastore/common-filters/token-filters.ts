@@ -1,4 +1,4 @@
-import {QueryableFilter} from "../../core/gcp-datastore/model";
+import {QueryableFilter} from "verto-internals/services/gcp";
 
 export const ArtFilter: QueryableFilter = {
     property: 'type',

@@ -1,7 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import {ContractWorkerService} from "../contract-worker/contract-worker.service";
 import {MetricType, WorkerPoolMetrics} from "../../../worker-pool/worker-pool-metrics";
-import {GcpDatastoreService} from "../gcp-datastore/gcp-datastore.service";
+import {GcpDatastoreService} from "verto-internals/services/gcp";
 
 @Injectable()
 export class ExceptionHandlerService {

@@ -2,8 +2,7 @@ import {Controller, Get, Post, UseGuards} from "@nestjs/common";
 import {InternalAuthGuard} from "../commons/guards/internal-auth.guard";
 import {ContractWorkerService} from "../../inc/services/core/contract-worker/contract-worker.service";
 import {Constants} from "../../inc/constants";
-import {GcpDatastoreService} from "../../inc/services/core/gcp-datastore/gcp-datastore.service";
-import {DatastoreKinds} from "../../inc/services/core/gcp-datastore/model";
+import {GcpDatastoreService, DatastoreKinds} from "verto-internals/services/gcp";
 import {GcpContractStorageService} from "../../inc/services/core/gcp-contract-storage/gcp-contract-storage.service";
 import {RecoverableContractsDatastoreService} from "../../inc/services/contracts-datastore/recoverable-contracts-datastore.service";
 

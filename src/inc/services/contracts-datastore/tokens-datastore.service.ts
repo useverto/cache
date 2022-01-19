@@ -1,7 +1,6 @@
 import {Injectable} from "@nestjs/common";
 import {CommunityTokensDatastore} from "../core/gcp-datastore/kind-interfaces/ds-community-tokens";
-import {DatastoreKinds, QueryableBase, QueryResult} from "../core/gcp-datastore/model";
-import {GcpDatastoreService} from "../core/gcp-datastore/gcp-datastore.service";
+import {DatastoreKinds, QueryableBase, QueryResult, GcpDatastoreService} from "verto-internals/services/gcp";
 import {BalancesDatastore} from "../core/gcp-datastore/kind-interfaces/ds-balances";
 
 /**

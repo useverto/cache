@@ -1,7 +1,6 @@
 import {Injectable} from "@nestjs/common";
-import {GcpDatastoreService} from "../core/gcp-datastore/gcp-datastore.service";
+import {GcpDatastoreService, DatastoreKinds} from "verto-internals/services/gcp";
 import {DsContractRecoverable} from "../core/gcp-datastore/kind-interfaces/ds-contract-recoverable";
-import {DatastoreKinds} from "../core/gcp-datastore/model";
 import {SaveResponse} from "@google-cloud/datastore/build/src/request";
 
 @Injectable()

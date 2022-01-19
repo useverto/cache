@@ -163,6 +163,8 @@ describe('Worker Pool tests', () => {
         // @ts-ignore
         const workerPoolExceptionHandler = new ExceptionHandlerService({
             exitContractWorkerPoolSafely: spy,
+        }, {
+            saveFull: jest.fn()
         });
 
         // @ts-ignore

@@ -79,4 +79,8 @@ export class GcpContractStorageService {
             .flat();
     }
 
+    async fetchContractState(contractId: string): Promise<string> {
+        return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `${contractId}/${contractId}_state.json`);
+    }
+
 }

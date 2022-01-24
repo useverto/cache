@@ -8,11 +8,21 @@ import {
 import {QueryResult, QueryResultBase} from "verto-internals/services/gcp";
 import {CommunityTokensDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-community-tokens";
 import {BalancesDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-balances";
+import {GcpContractStorageService} from "../../inc/services/core/gcp-contract-storage/gcp-contract-storage.service";
+import {Constants} from "../../inc/constants";
+import {
+    CommunityContract,
+    CommunityPeople,
+    CommunityToken
+} from "verto-internals/interfaces/contracts/community-contract";
+import {paginateArray} from "../../utils/commons";
+import {PaginationInfo, PaginationResult} from "verto-internals/services/miscellaneous/models";
 
 @Controller('token')
 export class SiteController {
 
-    constructor(private readonly tokensDatastoreService: TokensDatastoreService) {
+    constructor(private readonly tokensDatastoreService: TokensDatastoreService,
+                private readonly gcpContractStorageService: GcpContractStorageService) {
     }
 
     @Get('metadata/:id')
@@ -109,6 +119,42 @@ export class SiteController {
         return {
             entities: finalEntities,
             resultsStatus: finalEntities.length > 0 ? 'FOUND' : 'EMPTY'
+        }
+    }
+
+    @Get('paginate')
+    public async getTokensPaginated(@Query('size') size: string,
+                                    @Query('page') page: string,
+                                    @Query('type') type: "people" | "tokens"): Promise<PaginationResult<unknown>> {
+        const getCommunityContractState = await this.gcpContractStorageService.fetchContractState(Constants.COMMUNITY_CONTRACT);
+        const parsedContract: CommunityContract = JSON.parse(getCommunityContractState);
+        type PaginatedType = Array<CommunityPeople> | Array<CommunityToken>;
+        const searchType = type || "tokens";
+        const searchArray = parsedContract[searchType];
+        const searchPageSize = parseInt(size || '100');
+        const searchPage = parseInt(page || '1');
+        const maxItems = searchArray.length;
+        const searchInfo: PaginationInfo = {
+            count: maxItems,
+            pageSize:  searchPageSize,
+            page: searchPage,
+            maxPages: Math.ceil(maxItems/searchPageSize)
+        }
+        let items: Array<unknown> = [];
+
+        if(searchArray) {
+            const paginated = paginateArray<PaginatedType>(searchArray, searchPageSize, searchPage);
+
+            if (searchType === "tokens") {
+                items = (paginated as Array<CommunityToken>).map((item) => item.id);
+            } else {
+                items = paginated
+            }
+        }
+
+        return {
+            items,
+            paginationInfo: searchInfo
         }
     }
 

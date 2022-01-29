@@ -18,7 +18,7 @@ import {
 import {paginateArray} from "../../utils/commons";
 import {PaginationInfo, PaginationResult} from "verto-internals/services/miscellaneous/models";
 import {ProcessSearchExecution} from "../../inc/processing/process-search-execution";
-import {getNameAndTickerAndLogoAndDescription} from "../../../../cace-interface/src/utils";
+import {getNameAndTickerAndLogoAndDescription} from "../../utils/tokens";
 
 @Controller('token')
 export class SiteController {

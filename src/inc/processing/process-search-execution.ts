@@ -24,11 +24,11 @@ export class ProcessSearchExecution {
             startWorker.onmessage = (msg) => {
                 const data = msg.data;
                 if(data === "ERROR") {
-                    startWorker.terminate();
-                    reject("Unknown");
+                    reject(undefined);
                 } else {
                     resolve(data);
                 }
+                startWorker.terminate();
             }
         });
     }

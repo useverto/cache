@@ -17,6 +17,8 @@ import {
 } from "verto-internals/interfaces/contracts/community-contract";
 import {paginateArray} from "../../utils/commons";
 import {PaginationInfo, PaginationResult} from "verto-internals/services/miscellaneous/models";
+import {ProcessSearchExecution} from "../../inc/processing/process-search-execution";
+import {getNameAndTickerAndLogoAndDescription} from "../../../../cace-interface/src/utils";
 
 @Controller('token')
 export class SiteController {
@@ -140,7 +142,30 @@ export class SiteController {
             const paginated = paginateArray<PaginatedType>(searchArray, searchPageSize, searchPage);
 
             if (searchType === "tokens") {
-                items = (paginated as Array<CommunityToken>).map((item) => item.id);
+                const tokenIds = (paginated as Array<CommunityToken>).map((item) => item.id);
+                const data = await Promise.all(tokenIds.map(async (contractId) => ({
+                    contractId,
+                    state: await ProcessSearchExecution.fetchState(contractId),
+                    metadata: await ProcessSearchExecution.fetchTokenMetadata(contractId)
+                })));
+
+                items = data.map((item) => {
+                    const state = item.state;
+                    const { id, ticker, name, logo } = getNameAndTickerAndLogoAndDescription(item.contractId, state || {});
+                    const { type, lister } = item.metadata as any;
+                    const { items } = state as any;
+                    const listerMetadata = parsedContract["people"].find((item) => item.username === lister) as any || {};
+                    return {
+                        id,
+                        ticker,
+                        name,
+                        logo,
+                        type: type || "custom",
+                        lister: listerMetadata,
+                        items
+                    }
+                });
+
             } else {
                 items = paginated
             }

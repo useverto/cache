@@ -134,12 +134,6 @@ export class SiteController {
         const searchPageSize = parseInt(size || '100');
         const searchPage = parseInt(page || '1');
         const maxItems = searchArray.length;
-        const searchInfo: PaginationInfo = {
-            count: maxItems,
-            pageSize:  searchPageSize,
-            page: searchPage,
-            maxPages: Math.ceil(maxItems/searchPageSize)
-        }
         let items: Array<unknown> = [];
 
         if(searchArray) {
@@ -150,6 +144,14 @@ export class SiteController {
             } else {
                 items = paginated
             }
+        }
+
+        const searchInfo: PaginationInfo = {
+            count: maxItems,
+            pageSize:  searchPageSize,
+            page: searchPage,
+            maxPages: Math.ceil(maxItems/searchPageSize),
+            found: (items || []).length
         }
 
         return {

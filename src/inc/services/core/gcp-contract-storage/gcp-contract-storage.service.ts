@@ -1,7 +1,7 @@
 import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
-const stage = process.env["STAGE"]?.toLowerCase() || process.env["REF_NAME"]?.toLowerCase() || "unknown";
+const stage = process.env["STAGE"]?.toLowerCase();
 const isDevelop = stage === 'develop' || process.env["STATUS"]?.toLowerCase() === 'dev';
 const PARENT_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
 const PARENT_ADDRESS_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
@@ -17,6 +17,8 @@ export class GcpContractStorageService {
     private readonly PARENT_ADDRESS_BUCKET_NAME: string = PARENT_ADDRESS_BUCKET_NAME;
     public static readonly S_PARENT_BUCKET_NAME = PARENT_BUCKET_NAME;
     public static readonly S_PARENT_ADDRESS_BUCKET_NAME = PARENT_ADDRESS_BUCKET_NAME;
+    public static readonly S_IS_DEVELOP = isDevelop;
+    public static readonly S_STAGE = stage;
 
     constructor(private readonly gcpStorage: GcpStorageService) {
         console.log(`Detected Stage: ${stage} === Develop ? ${isDevelop}`);

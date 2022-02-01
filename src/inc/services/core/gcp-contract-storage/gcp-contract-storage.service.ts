@@ -1,8 +1,9 @@
 import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
-const stage = process.env["STAGE"]?.toLowerCase() || "unknown";
+const stage = process.env["STAGE"]?.toLowerCase() || process.env["REF_NAME"]?.toLowerCase() || "unknown";
 const isDevelop = stage === 'develop';
+console.log(`Detected Stage: ${stage} === Develop ? ${isDevelop}`);
 
 /**
  * This service interacts with the logic behind caching our contracts inside the Google CDN

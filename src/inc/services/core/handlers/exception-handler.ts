@@ -19,6 +19,7 @@ export class ExceptionHandlerService {
             const error: any = err;
             const requestUrl = error?.config?.url || '';
             console.error(err);
+            console.log(process.env["STAGE"], process.env["REF_NAME"], process.env["STATUS"]);
             if(!(requestUrl.includes(`https://storage.googleapis.com/upload/storage/v1/b/${GcpContractStorageService.S_PARENT_BUCKET_NAME}`))) {
                 WorkerPoolMetrics.addMetric(MetricType.FAILURES, (current) => current + 1);
                 await WorkerPoolMetrics.processAll(this.gcpDatastoreService);

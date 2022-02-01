@@ -29,6 +29,7 @@ steps:
     entrypoint: 'npm'
     args: ['install', '-g', '@nestjs/cli']
   - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
     args:
       - '-c'
       - 'if [[ "$BRANCH_NAME" == "develop" ]] && gcloud app deploy app_dev.yaml || gcloud app deploy app.yaml'

@@ -1,8 +1,8 @@
 import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
-const stage = process.env["STAGE"]?.toLowerCase();
-const isDevelop = stage === 'develop' || process.env["STATUS"]?.toLowerCase() === 'dev';
+const stage = process.env["STAGE"];
+const isDevelop = stage === 'develop' || process.env["STATUS"] === 'dev';
 const PARENT_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
 const PARENT_ADDRESS_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
 

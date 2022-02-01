@@ -29,7 +29,9 @@ steps:
     entrypoint: 'npm'
     args: ['install', '-g', '@nestjs/cli']
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: [ 'app', 'deploy', 'app.yaml']
+    args:
+      - '-c'
+      - 'if [[ "$BRANCH_NAME" == "develop" ]] && gcloud app deploy app_dev.yaml || gcloud app deploy app.yaml'
 options:
   logging: CLOUD_LOGGING_ONLY
 timeout: 1200s

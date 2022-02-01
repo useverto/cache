@@ -1,14 +1,17 @@
 import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
+const stage = process.env["STAGE"]?.toLowerCase() || "unknown";
+const isDevelop = stage === 'develop';
+
 /**
  * This service interacts with the logic behind caching our contracts inside the Google CDN
  */
 @Injectable()
 export class GcpContractStorageService {
 
-    private readonly PARENT_BUCKET_NAME: string = process.env["STAGE"] ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
-    private readonly PARENT_ADDRESS_BUCKET_NAME: string = process.env["STAGE"] ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
+    private readonly PARENT_BUCKET_NAME: string = isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
+    private readonly PARENT_ADDRESS_BUCKET_NAME: string = isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
 
     constructor(private readonly gcpStorage: GcpStorageService) {
         this.initializeParentBucket(this.PARENT_BUCKET_NAME);

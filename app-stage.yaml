@@ -1,0 +1,16 @@
+runtime: nodejs
+env: flex
+service: verto-cache-stage
+
+resources:
+  cpu: 2
+  memory_gb: 8
+  disk_size_gb: 10
+
+liveness_check:
+  path: "/ping"
+  check_interval_sec: 30
+  timeout_sec: 5
+  failure_threshold: 2
+  success_threshold: 3
+

@@ -29,7 +29,7 @@ steps:
     entrypoint: 'npm'
     args: ['install', '-g', '@nestjs/cli']
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: [ 'app', 'deploy', 'app.yaml']
+    args: [ 'app', 'deploy', 'app_dev.yaml']
 options:
   logging: CLOUD_LOGGING_ONLY
 timeout: 1200s

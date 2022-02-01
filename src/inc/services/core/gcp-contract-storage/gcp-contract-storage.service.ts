@@ -7,8 +7,8 @@ import {Injectable} from "@nestjs/common";
 @Injectable()
 export class GcpContractStorageService {
 
-    private readonly PARENT_BUCKET_NAME: string = 'verto-exchange-contracts';
-    private readonly PARENT_ADDRESS_BUCKET_NAME: string = 'verto-exchange-contracts-addresses';
+    private readonly PARENT_BUCKET_NAME: string = process.env["STAGE"] ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
+    private readonly PARENT_ADDRESS_BUCKET_NAME: string = process.env["STAGE"] ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
 
     constructor(private readonly gcpStorage: GcpStorageService) {
         this.initializeParentBucket(this.PARENT_BUCKET_NAME);

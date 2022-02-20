@@ -1,4 +1,4 @@
-import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
+import {GcpStorageService} from "verto-internals/services/gcp/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
 const stage = process.env["STAGE"];

@@ -1,4 +1,4 @@
-import {GcpStorageService} from "../../services/core/gcp-storage/gcp-storage.service";
+import {GcpStorageService} from "verto-internals/services/gcp/gcp-storage.service";
 import {GcpContractStorageService} from "../../services/core/gcp-contract-storage/gcp-contract-storage.service";
 import {GcpDatastoreService} from "verto-internals/services/gcp";
 import {TokensDatastoreService} from "../../services/contracts-datastore/tokens-datastore.service";

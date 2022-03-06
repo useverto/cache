@@ -1,5 +1,11 @@
-import {GcpStorageService} from "../gcp-storage/gcp-storage.service";
+import {GcpStorageService} from "verto-internals/services/gcp/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
+
+const stage = process.env["STAGE"];
+const isDevelop = stage === 'develop' || process.env["STATUS"] === 'dev';
+const PARENT_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
+const PARENT_ADDRESS_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
+
 
 /**
  * This service interacts with the logic behind caching our contracts inside the Google CDN
@@ -7,10 +13,15 @@ import {Injectable} from "@nestjs/common";
 @Injectable()
 export class GcpContractStorageService {
 
-    private readonly PARENT_BUCKET_NAME: string = 'verto-exchange-contracts';
-    private readonly PARENT_ADDRESS_BUCKET_NAME: string = 'verto-exchange-contracts-addresses';
+    private readonly PARENT_BUCKET_NAME: string = PARENT_BUCKET_NAME;
+    private readonly PARENT_ADDRESS_BUCKET_NAME: string = PARENT_ADDRESS_BUCKET_NAME;
+    public static readonly S_PARENT_BUCKET_NAME = PARENT_BUCKET_NAME;
+    public static readonly S_PARENT_ADDRESS_BUCKET_NAME = PARENT_ADDRESS_BUCKET_NAME;
+    public static readonly S_IS_DEVELOP = isDevelop;
+    public static readonly S_STAGE = stage;
 
     constructor(private readonly gcpStorage: GcpStorageService) {
+        console.log(`Detected Stage: ${stage} === Develop ? ${isDevelop}`);
         this.initializeParentBucket(this.PARENT_BUCKET_NAME);
         this.initializeParentBucket(this.PARENT_ADDRESS_BUCKET_NAME);
     }
@@ -35,6 +46,22 @@ export class GcpContractStorageService {
                 });
                 return [fileUpload, validityUpload];
             }
+
+            return [fileUpload];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Upload all tokens skeletons for search purposes
+     */
+    async uploadSkeletons(skeletons: Array<any>) {
+        try {
+            const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                fileName: `tokens/skeletons.json`,
+                fileContent: JSON.stringify(skeletons, null, 2)
+            });
 
             return [fileUpload];
         } catch {
@@ -81,6 +108,10 @@ export class GcpContractStorageService {
 
     async fetchContractState(contractId: string): Promise<string> {
         return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `${contractId}/${contractId}_state.json`);
+    }
+
+    async fetchTokenSkeleton(): Promise<string> {
+        return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `tokens/skeletons.json`);
     }
 
 }

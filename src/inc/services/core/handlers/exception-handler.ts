@@ -2,6 +2,7 @@ import {Injectable} from "@nestjs/common";
 import {ContractWorkerService} from "../contract-worker/contract-worker.service";
 import {MetricType, WorkerPoolMetrics} from "../../../worker-pool/worker-pool-metrics";
 import {GcpDatastoreService} from "verto-internals/services/gcp";
+import {GcpContractStorageService} from "../gcp-contract-storage/gcp-contract-storage.service";
 
 @Injectable()
 export class ExceptionHandlerService {
@@ -18,7 +19,10 @@ export class ExceptionHandlerService {
             const error: any = err;
             const requestUrl = error?.config?.url || '';
             console.error(err);
-            if(!(requestUrl.includes('https://storage.googleapis.com/upload/storage/v1/b/verto-exchange-contracts'))) {
+            console.log(process.env["STAGE"], process.env["REF_NAME"], process.env["STATUS"]);
+            console.log(`Bucket: ${GcpContractStorageService.S_PARENT_BUCKET_NAME}`);
+            console.log(`Stage: ${GcpContractStorageService.S_STAGE}`);
+            if(!(requestUrl.includes(`https://storage.googleapis.com/upload/storage/v1/b/${GcpContractStorageService.S_PARENT_BUCKET_NAME}`))) {
                 WorkerPoolMetrics.addMetric(MetricType.FAILURES, (current) => current + 1);
                 await WorkerPoolMetrics.processAll(this.gcpDatastoreService);
                 await Promise.allSettled(this.contractWorkerService.exitContractWorkerPoolSafely());

@@ -1,6 +1,9 @@
 runtime: nodejs
 env: flex
-service: verto-cache-stage
+
+env_variables:
+  STAGE: "develop"
+  STATUS: "dev"
 
 resources:
   cpu: 2

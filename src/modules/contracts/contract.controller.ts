@@ -5,6 +5,7 @@ import {OnlyDevGuard} from "../commons/guards/only-dev.guard";
 import {WorkerProcessPostResult} from "../../inc/worker-pool/model";
 import {ContractResult} from "../../inc/common.model";
 import {FailedContractsDatastoreService} from "../../inc/services/contracts-datastore/failed-contracts-datastore.service";
+import {InternalAuthGuard} from "../commons/guards/internal-auth.guard";
 
 @Controller('contracts')
 export class ContractController {
@@ -33,6 +34,12 @@ export class ContractController {
     @UseGuards(OnlyDevGuard)
     async processContract(@Param('id') id: string): Promise<ContractResult> {
         return this.executeContract(id);
+    }
+
+    @Post('save-skeletons')
+    @UseGuards(InternalAuthGuard)
+    async processSkeletons() {
+        return this.contractWorkerService.cacheFullContractSkeleton();
     }
 
     @Post('saveAndWait/:id')

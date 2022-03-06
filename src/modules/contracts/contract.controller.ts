@@ -39,7 +39,10 @@ export class ContractController {
     @Post('save-skeletons')
     @UseGuards(InternalAuthGuard)
     async processSkeletons() {
-        return this.contractWorkerService.cacheFullContractSkeleton();
+        this.contractWorkerService.cacheFullContractSkeleton();
+        return {
+            status: 'scheduled'
+        };
     }
 
     @Post('saveAndWait/:id')

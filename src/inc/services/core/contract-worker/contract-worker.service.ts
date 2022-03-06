@@ -13,6 +13,9 @@ import {DsFailedContracts} from "../gcp-datastore/kind-interfaces/ds-failed-cont
 import {DsBlacklistedContracts} from "../gcp-datastore/kind-interfaces/ds-blacklisted-contracts";
 import {MetricType, WorkerPoolMetrics} from "../../../worker-pool/worker-pool-metrics";
 import {BalancesDatastore} from "../gcp-datastore/kind-interfaces/ds-balances";
+import {CommunityContract} from "verto-internals/interfaces/contracts/community-contract";
+import {ProcessSearchExecution} from "../../../processing/process-search-execution";
+import {getNameAndTickerAndLogoAndDescription} from "../../../../utils/tokens";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -88,6 +91,45 @@ export class ContractWorkerService {
         return contracts.map(async (item) => {
             return await this.recoverableContractDatastoreService.saveContract(item)
         });
+    }
+
+    /**
+     * Cache Full Contract skeleton
+     */
+    public async cacheFullContractSkeleton(): Promise<void> {
+        const getCommunityContractState = await this.gcpContractStorage.fetchContractState(Constants.COMMUNITY_CONTRACT);
+        const parsedContract: CommunityContract = JSON.parse(getCommunityContractState);
+        const tokens = parsedContract["tokens"];
+
+        const tokenIds = tokens.map((item) => item.id);
+        const data = await Promise.all(tokenIds.map(async (contractId) => ({
+            contractId,
+            state: await ProcessSearchExecution.fetchState(contractId),
+            metadata: await ProcessSearchExecution.fetchTokenMetadata(contractId)
+        })));
+
+        const skeletons = data.map((item) => {
+            try {
+                const state = item.state;
+                const {id, ticker, name, logo} = getNameAndTickerAndLogoAndDescription(item.contractId, state || {});
+                const {type, lister} = item.metadata as any;
+                const {items} = state as any;
+                const listerMetadata = parsedContract["people"].find((item) => item.username === lister) as any || {};
+                return {
+                    id,
+                    ticker,
+                    name,
+                    logo,
+                    type: type || "custom",
+                    lister: listerMetadata,
+                    items
+                }
+            } catch {
+                return {}
+            }
+        });
+
+        await this.gcpContractStorage.uploadSkeletons(skeletons);
     }
 
     /**

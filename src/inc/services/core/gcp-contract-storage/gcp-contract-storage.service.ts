@@ -54,6 +54,22 @@ export class GcpContractStorageService {
     }
 
     /**
+     * Upload all tokens skeletons for search purposes
+     */
+    async uploadSkeletons(skeletons: Array<any>) {
+        try {
+            const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                fileName: `tokens/skeletons.json`,
+                fileContent: JSON.stringify(skeletons, null, 2)
+            });
+
+            return [fileUpload];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
      * Creates the parent bucket where contracts are stored and sets a CORS configuration of public
      */
     async initializeParentBucket(bucketName: string): Promise<void> {
@@ -92,6 +108,10 @@ export class GcpContractStorageService {
 
     async fetchContractState(contractId: string): Promise<string> {
         return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `${contractId}/${contractId}_state.json`);
+    }
+
+    async fetchTokenSkeleton(): Promise<string> {
+        return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `tokens/skeletons.json`);
     }
 
 }

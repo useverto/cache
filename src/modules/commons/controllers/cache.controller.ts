@@ -17,7 +17,8 @@ export class CacheController {
             workerPool: {
                 ...this.contractWorkerService.getStats()
             },
-            communityContract: Constants.COMMUNITY_CONTRACT
+            communityContract: Constants.COMMUNITY_CONTRACT,
+            communityContractEnv: process.env.COMMUNITY_CONTRACT
         }
     }
 

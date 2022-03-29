@@ -25,6 +25,5 @@ import {Constants} from "./inc/constants";
 })
 export class AppModule {
     constructor() {
-        Constants.COMMUNITY_CONTRACT = process.env.COMMUNITY_CONTRACT ? process.env.COMMUNITY_CONTRACT : 't9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE';
     }
 }

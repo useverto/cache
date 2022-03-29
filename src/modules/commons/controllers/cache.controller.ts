@@ -1,5 +1,6 @@
 import {Controller, Get} from "@nestjs/common";
 import {ContractWorkerService} from "../../../inc/services/core/contract-worker/contract-worker.service";
+import {Constants} from "../../../inc/constants";
 
 @Controller()
 export class CacheController {
@@ -15,7 +16,8 @@ export class CacheController {
             port: process.env["PORT"],
             workerPool: {
                 ...this.contractWorkerService.getStats()
-            }
+            },
+            communityContract: Constants.COMMUNITY_CONTRACT
         }
     }
 

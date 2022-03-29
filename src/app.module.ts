@@ -6,6 +6,7 @@ import {WorkerPoolModule} from "./modules/workerpool/worker-pool.module";
 import {SitesModule} from "./modules/sites/sites.module";
 import {UserModule} from "./modules/users/user.module";
 import {CacheController} from "./modules/commons/controllers/cache.controller";
+import {Constants} from "./inc/constants";
 
 
 @Module({
@@ -22,4 +23,8 @@ import {CacheController} from "./modules/commons/controllers/cache.controller";
   ],
   providers: [],
 })
-export class AppModule {}
+export class AppModule {
+    constructor() {
+        Constants.COMMUNITY_CONTRACT = process.env.COMMUNITY_CONTRACT ? process.env.COMMUNITY_CONTRACT : 't9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE';
+    }
+}

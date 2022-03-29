@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {loadGlobals} from "./load-globals";
+import { config as dotenv } from "dotenv";
 
 loadGlobals();
+dotenv();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

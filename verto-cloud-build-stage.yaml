@@ -25,6 +25,7 @@ steps:
       - 'STATUS=${_STATUS}'
       - 'REV=$REVISION_ID'
       - 'STAGE=$BRANCH_NAME'
+      - 'COMMUNITY_CONTRACT=${_COMMUNITY_CONTRACT}'
   - name: 'node'
     entrypoint: 'npm'
     args: ['install', '-g', '@nestjs/cli']

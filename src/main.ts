@@ -7,6 +7,8 @@ import {Constants} from "./inc/constants";
 loadGlobals();
 dotenv();
 
+Constants.COMMUNITY_CONTRACT = process.env.COMMUNITY_CONTRACT ? process.env.COMMUNITY_CONTRACT : 't9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
@@ -15,9 +17,7 @@ async function bootstrap() {
     maxAge: parseInt(process.env["MAX_AGE_SECONDS"]! || '0') || 3600
   })
   const port = process.env["PORT"] || process.env["port"];
-  await app.listen(port ? parseInt(port) : 3000, () => {
-    Constants.COMMUNITY_CONTRACT = process.env.COMMUNITY_CONTRACT ? process.env.COMMUNITY_CONTRACT : 't9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE';
-  });
+  await app.listen(port ? parseInt(port) : 3000);
 }
 
 bootstrap();

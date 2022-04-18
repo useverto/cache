@@ -1,27 +1,55 @@
 import {GcpStorageService} from "verto-internals/services/gcp/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
-const stage = process.env["STAGE"];
-const isDevelop = stage === 'develop' || process.env["STATUS"] === 'dev';
-const PARENT_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
-const PARENT_ADDRESS_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
-
-
 /**
  * This service interacts with the logic behind caching our contracts inside the Google CDN
  */
 @Injectable()
 export class GcpContractStorageService {
 
-    private readonly PARENT_BUCKET_NAME: string = PARENT_BUCKET_NAME;
-    private readonly PARENT_ADDRESS_BUCKET_NAME: string = PARENT_ADDRESS_BUCKET_NAME;
-    public static readonly S_PARENT_BUCKET_NAME = PARENT_BUCKET_NAME;
-    public static readonly S_PARENT_ADDRESS_BUCKET_NAME = PARENT_ADDRESS_BUCKET_NAME;
-    public static readonly S_IS_DEVELOP = isDevelop;
-    public static readonly S_STAGE = stage;
+    static get stage() {
+        return process.env["STAGE"];
+    }
+
+    static get isDevelop() {
+        const isDevelop = this.stage === 'develop' || process.env["STATUS"] === 'dev';
+        return isDevelop;
+    }
+
+    static get PARENT_BUCKET_NAME_STATIC() {
+        return this.isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
+    }
+
+    static get PARENT_ADDRESS_BUCKET_NAME_STATIC() {
+        return this.isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
+    }
+
+    static get S_PARENT_BUCKET_NAME() {
+        return this.PARENT_BUCKET_NAME_STATIC;
+    }
+
+    static get S_PARENT_ADDRESS_BUCKET_NAME() {
+        return this.PARENT_ADDRESS_BUCKET_NAME_STATIC;
+    }
+
+    get PARENT_BUCKET_NAME() {
+        return GcpContractStorageService.PARENT_BUCKET_NAME_STATIC;
+    }
+
+    get PARENT_ADDRESS_BUCKET_NAME() {
+        return GcpContractStorageService.PARENT_ADDRESS_BUCKET_NAME_STATIC;
+    }
+
+    static get S_IS_DEVELOP() {
+        return this.isDevelop;
+    }
+
+    static get S_STAGE() {
+        return this.stage;
+    }
 
     constructor(private readonly gcpStorage: GcpStorageService) {
-        console.log(`Detected Stage: ${stage} === Develop ? ${isDevelop}`);
+        console.log(`Detected Stage: ${GcpContractStorageService.stage} === Develop ? ${GcpContractStorageService.isDevelop}`);
         this.initializeParentBucket(this.PARENT_BUCKET_NAME);
         this.initializeParentBucket(this.PARENT_ADDRESS_BUCKET_NAME);
     }

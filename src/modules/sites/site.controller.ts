@@ -127,7 +127,8 @@ export class SiteController {
     @Get('paginate')
     public async getTokensPaginated(@Query('size') size: string,
                                     @Query('page') page: string,
-                                    @Query('type') type: "people" | "tokens"): Promise<PaginationResult<unknown>> {
+                                    @Query('type') type: "people" | "tokens",
+                                    @Query('sort') sort: boolean): Promise<PaginationResult<unknown>> {
         const getCommunityContractState = await this.gcpContractStorageService.fetchContractState(Constants.COMMUNITY_CONTRACT);
         const parsedContract: CommunityContract = JSON.parse(getCommunityContractState);
         type PaginatedType = Array<CommunityPeople> | Array<CommunityToken>;
@@ -143,6 +144,10 @@ export class SiteController {
 
             if (searchType === "tokens") {
                 items = paginateArray(JSON.parse(await this.gcpContractStorageService.fetchTokenSkeleton()), searchPageSize, searchPage);
+                if(sort) {
+                    // @ts-ignore
+                    items = items.sort((a, b) => b.addressesLength - a.addressesLength);
+                }
             } else {
                 items = paginated
             }

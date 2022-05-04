@@ -129,7 +129,8 @@ export class ContractWorkerService {
                         logo,
                         type: type || "custom",
                         lister: listerMetadata,
-                        items
+                        items,
+                        addressesLength: Object.keys(state?.balances || []).length
                     }
                 } catch {
                     return {}

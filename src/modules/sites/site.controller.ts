@@ -28,7 +28,13 @@ export class SiteController {
 
     @Get('price/:pair')
     public async getPairPrice(@Param('pair') pair: string): Promise<VwapsDatastore | undefined> {
-        return (await this.tokensDatastoreService.getPrice(pair) || undefined);
+        const tokenPrice = (await this.tokensDatastoreService.getPrice(pair) || undefined);
+        // @ts-ignore
+        return {
+            ...tokenPrice,
+            // @ts-ignore
+            pair: tokenPrice?.pair?.split(",")
+        }
     }
 
     @Get('metadata/:id')

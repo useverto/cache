@@ -8,6 +8,7 @@ loadGlobals();
 dotenv();
 
 Constants.COMMUNITY_CONTRACT = process.env.COMMUNITY_CONTRACT ? process.env.COMMUNITY_CONTRACT : 't9T7DIOGxx4VWXoCEeYYarFYeERTpWIC1V3y-BPZgKE';
+Constants.CLOB_CONTRACT = process.env.CLOB_CONTRACT || '';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

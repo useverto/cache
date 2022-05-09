@@ -115,6 +115,28 @@ export class GcpContractStorageService {
     }
 
     /**
+     * Uploads vwaps for a given pair
+     */
+    async uploadVwaps(pair: [string, string], vwaps: Array<any>) {
+        try {
+            const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                fileName: `vwaps/${pair[0]}_${pair[1]}.json`,
+                fileContent: JSON.stringify(vwaps, null, 2),
+                options: {
+                    // @ts-ignore
+                    metadata: {
+                        ["Cache-Control"]: "no-store",
+                        cacheControl: "no-store"
+                    }
+                }
+            });
+            return [fileUpload];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
      * Creates the parent bucket where contracts are stored and sets a CORS configuration of public
      */
     async initializeParentBucket(bucketName: string): Promise<void> {
@@ -157,6 +179,14 @@ export class GcpContractStorageService {
 
     async fetchTokenSkeleton(): Promise<string> {
         return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `tokens/skeletons.json`);
+    }
+
+    async fetchTokenVwaps(pair: [string, string]): Promise<string | undefined> {
+        try {
+            return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `vwaps/${pair[0]}_${pair[1]}.json`);
+        } catch {
+            return undefined;
+        }
     }
 
 }

@@ -17,6 +17,9 @@ import {CommunityContract} from "verto-internals/interfaces/contracts/community-
 import {ProcessSearchExecution} from "../../../processing/process-search-execution";
 import {getNameAndTickerAndLogoAndDescription} from "../../../../utils/tokens";
 import {TokensDatastoreService} from "../../contracts-datastore/tokens-datastore.service";
+import {Interceptors} from "smartweave-verto";
+import {VwapsDatastore} from "../gcp-datastore/kind-interfaces/ds-vwaps";
+import {randomString} from "../../../../utils/commons";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -38,6 +41,12 @@ export class ContractWorkerService {
         this.recoverContracts();
         this.initializeCustomTimers();
         WorkerPoolMetrics.initializeTimers(gcpDatastoreService);
+
+        if(Constants.CLOB_CONTRACT === '') {
+            setTimeout(() => this.setClobInterceptor(), 5000);
+        } else {
+            this.setClobInterceptor();
+        }
     }
 
     /**
@@ -357,6 +366,41 @@ export class ContractWorkerService {
 
     private async initializeCustomTimers() {
         this.workerPool.addTimer(() => this.initializeBlacklistedContracts(), 60000);
+    }
+
+    private setClobInterceptor() {
+        Interceptors.setContractInterceptor(Constants.CLOB_CONTRACT, async (contractId: string, state: any, interactionNumber: number, height: number) => {
+            if(interactionNumber < 0) { return; }
+            const { pairs }: { pairs: Array<any> } = state;
+            if(pairs) {
+                for (let pairItem of pairs) {
+                    const { pair, priceData }: { pair: [string, string], priceData: any } = pairItem;
+                    const pairString = pair.join(",");
+                    const latestVwapBlockCached = await this.gcpDatastoreService.getSingle<VwapsDatastore>(
+                        // @ts-ignore
+                        this.gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
+                    );
+                    if(!latestVwapBlockCached || latestVwapBlockCached && priceData.block > Number(latestVwapBlockCached.block)) {
+                        const vwapsForPair: Array<any> = JSON.parse(await this.gcpContractStorage.fetchTokenVwaps(pair) || '[]');
+                        vwapsForPair.push({
+                            block: priceData.block,
+                            vwap: priceData.vwap
+                        });
+                        await this.gcpContractStorage.uploadVwaps(pair, vwapsForPair);
+                        await this.gcpDatastoreService.saveFull<VwapsDatastore>({
+                            // @ts-ignore
+                            entity: "LATEST_VWAPS",
+                            id: pairString,
+                            data: {
+                                pair: pairString,
+                                block: priceData.block,
+                                vwap: priceData.vwap
+                            }
+                        });
+                    }
+                }
+            }
+        })
     }
 
 }

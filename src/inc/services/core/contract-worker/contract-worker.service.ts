@@ -41,12 +41,6 @@ export class ContractWorkerService {
         this.recoverContracts();
         this.initializeCustomTimers();
         WorkerPoolMetrics.initializeTimers(gcpDatastoreService);
-
-        if(Constants.CLOB_CONTRACT === '') {
-            setTimeout(() => this.setClobInterceptor(), 5000);
-        } else {
-            this.setClobInterceptor();
-        }
     }
 
     /**
@@ -348,6 +342,7 @@ export class ContractWorkerService {
      * Recover all the contracts (failed and recoverable) and send them to the worker pool
      */
     private async recoverContracts() {
+        if(process.env.NO_WARMUP === 'true') { return; }
         const contracts = [
             ...await this.recoverableContractDatastoreService.getAllAndClean(),
             ...await this.recoverableContractDatastoreService.getAllAndClean('failed')
@@ -366,40 +361,6 @@ export class ContractWorkerService {
 
     private async initializeCustomTimers() {
         this.workerPool.addTimer(() => this.initializeBlacklistedContracts(), 60000);
-    }
-
-    private setClobInterceptor() {
-        Interceptors.setContractInterceptor(Constants.CLOB_CONTRACT, async (contractId: string, state: any, interactionNumber: number, height: number) => {
-            const { pairs }: { pairs: Array<any> } = state;
-            if(pairs) {
-                for (let pairItem of pairs) {
-                    const { pair, priceData }: { pair: [string, string], priceData: any } = pairItem;
-                    const pairString = pair.join(",");
-                    const latestVwapBlockCached = await this.gcpDatastoreService.getSingle<VwapsDatastore>(
-                        // @ts-ignore
-                        this.gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
-                    );
-                    if(!latestVwapBlockCached || latestVwapBlockCached && priceData.block > Number(latestVwapBlockCached.block)) {
-                        const vwapsForPair: Array<any> = JSON.parse(await this.gcpContractStorage.fetchTokenVwaps(pair) || '[]');
-                        vwapsForPair.push({
-                            block: priceData.block,
-                            vwap: priceData.vwap
-                        });
-                        await this.gcpContractStorage.uploadVwaps(pair, vwapsForPair);
-                        await this.gcpDatastoreService.saveFull<VwapsDatastore>({
-                            // @ts-ignore
-                            entity: "LATEST_VWAPS",
-                            id: pairString,
-                            data: {
-                                pair: pairString,
-                                block: priceData.block,
-                                vwap: priceData.vwap
-                            }
-                        });
-                    }
-                }
-            }
-        })
     }
 
 }

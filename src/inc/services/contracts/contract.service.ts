@@ -1,4 +1,4 @@
-import { readContract } from "smartweave-verto";
+import {Interceptors, readContract} from "smartweave-verto";
 import {ContractResult} from "../../common.model";
 import {Injectable} from "@nestjs/common";
 import {ArweaveClientService} from "../core/arweave/arweave-client.service";

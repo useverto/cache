@@ -17,14 +17,18 @@ import {
 } from "verto-internals/interfaces/contracts/community-contract";
 import {paginateArray} from "../../utils/commons";
 import {PaginationInfo, PaginationResult} from "verto-internals/services/miscellaneous/models";
-import {ProcessSearchExecution} from "../../inc/processing/process-search-execution";
-import {getNameAndTickerAndLogoAndDescription} from "../../utils/tokens";
+import {VwapsDatastore} from "../../inc/services/core/gcp-datastore/kind-interfaces/ds-vwaps";
 
 @Controller('token')
 export class SiteController {
 
     constructor(private readonly tokensDatastoreService: TokensDatastoreService,
                 private readonly gcpContractStorageService: GcpContractStorageService) {
+    }
+
+    @Get('price/:pair')
+    public async getPairPrice(@Param('pair') pair: string): Promise<VwapsDatastore | undefined> {
+        return (await this.tokensDatastoreService.getPrice(pair) || undefined);
     }
 
     @Get('metadata/:id')

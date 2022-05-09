@@ -2,6 +2,7 @@ import {Injectable} from "@nestjs/common";
 import {CommunityTokensDatastore} from "../core/gcp-datastore/kind-interfaces/ds-community-tokens";
 import {DatastoreKinds, QueryableBase, QueryResult, GcpDatastoreService} from "verto-internals/services/gcp";
 import {BalancesDatastore} from "../core/gcp-datastore/kind-interfaces/ds-balances";
+import {VwapsDatastore} from "../core/gcp-datastore/kind-interfaces/ds-vwaps";
 
 /**
  * This service is responsible for the interaction with entity {@Link DatastoreKinds.COMMUNITY_TOKENS}
@@ -19,6 +20,17 @@ export class TokensDatastoreService {
     async getToken(contractId: string): Promise<CommunityTokensDatastore | undefined> {
         return await this.gcpDatastoreService.getSingle(
             this.gcpDatastoreService.createKey(DatastoreKinds.COMMUNITY_TOKENS, contractId)
+        );
+    }
+
+    /**
+     * Get the metadata of a token based on a token (contract) id.
+     * @param contractId token id.
+     */
+    async getPrice(pairString: string): Promise<VwapsDatastore | undefined> {
+        return await this.gcpDatastoreService.getSingle(
+            // @ts-ignore
+            this.gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
         );
     }
 

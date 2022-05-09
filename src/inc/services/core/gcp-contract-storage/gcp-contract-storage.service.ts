@@ -49,7 +49,6 @@ export class GcpContractStorageService {
     }
 
     constructor(private readonly gcpStorage: GcpStorageService) {
-        console.log(`Detected Stage: ${GcpContractStorageService.stage} === Develop ? ${GcpContractStorageService.isDevelop}`);
         this.initializeParentBucket(this.PARENT_BUCKET_NAME);
         this.initializeParentBucket(this.PARENT_ADDRESS_BUCKET_NAME);
     }
@@ -183,7 +182,13 @@ export class GcpContractStorageService {
 
     async fetchTokenVwaps(pair: [string, string]): Promise<string | undefined> {
         try {
-            return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `vwaps/${pair[0]}_${pair[1]}.json`);
+            const fileName = `vwaps/${pair[0]}_${pair[1]}.json`;
+            const file = (await this.gcpStorage.getBucket(this.PARENT_BUCKET_NAME).file(fileName).exists())[0];
+            if(file) {
+                return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `vwaps/${pair[0]}_${pair[1]}.json`);
+            } else {
+                return undefined;
+            }
         } catch {
             return undefined;
         }

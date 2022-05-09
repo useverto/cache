@@ -370,7 +370,6 @@ export class ContractWorkerService {
 
     private setClobInterceptor() {
         Interceptors.setContractInterceptor(Constants.CLOB_CONTRACT, async (contractId: string, state: any, interactionNumber: number, height: number) => {
-            if(interactionNumber < 0) { return; }
             const { pairs }: { pairs: Array<any> } = state;
             if(pairs) {
                 for (let pairItem of pairs) {

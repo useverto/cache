@@ -16,6 +16,7 @@ const gcpContractStorage = new GcpContractStorageService(new GcpStorageService()
 const clobContract = String(process.env.CLOB_CONTRACT);
 
 let vwaps: Record<any, Array<any>> = {};
+let latestVwapBlockCachedGlobal: any = undefined;
 
 Interceptors.setContractInterceptor(clobContract, async (contractId: string, state: any, interactionNumber: number, height: number) => {
     const { pairs }: { pairs: Array<any> } = state;
@@ -24,11 +25,17 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
             const { pair, priceData }: { pair: [string, string], priceData: any } = pairItem;
             if(!priceData) { return; }
             const pairString = pair.join(",");
-            const latestVwapBlockCached = await gcpDatastoreService.getSingle<VwapsDatastore>(
-                // @ts-ignore
-                gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
-            );
-            if(!latestVwapBlockCached || latestVwapBlockCached && priceData.block > Number(latestVwapBlockCached.block)) {
+            if(!latestVwapBlockCachedGlobal) {
+                const latestVwapBlockCached = await gcpDatastoreService.getSingle<VwapsDatastore>(
+                    // @ts-ignore
+                    gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
+                );
+                if(latestVwapBlockCached) {
+                    latestVwapBlockCachedGlobal = Number(latestVwapBlockCached.block);
+                }
+            }
+
+            if(!latestVwapBlockCachedGlobal || latestVwapBlockCachedGlobal && priceData.block > latestVwapBlockCachedGlobal) {
                 if(!vwaps[pairString]) {
                     vwaps[pairString] = JSON.parse(await gcpContractStorage.fetchTokenVwaps(pair) || '[]');
                 }
@@ -37,6 +44,8 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                     vwap: priceData.vwap,
                     dominantToken: priceData.dominantToken
                 });
+
+                latestVwapBlockCachedGlobal = priceData.block;
             }
         }
     }
@@ -76,6 +85,7 @@ addEventListener('message', async e => {
                     }
                 });
             }
+            latestVwapBlockCachedGlobal = undefined;
             vwaps = {};
         }
         // @ts-ignore

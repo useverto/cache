@@ -16,7 +16,7 @@ const gcpContractStorage = new GcpContractStorageService(new GcpStorageService()
 const clobContract = String(process.env.CLOB_CONTRACT);
 
 let vwaps: Record<any, Array<any>> = {};
-let latestVwapBlockCachedGlobal: Record<any, number | undefined> = {};
+let latestVwapBlockCachedGlobal: Record<any, Record<any, any> | undefined> = {};
 
 Interceptors.setContractInterceptor(clobContract, async (contractId: string, state: any, interactionNumber: number, height: number) => {
     const { pairs }: { pairs: Array<any> } = state;
@@ -34,11 +34,11 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                     gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
                 );
                 if(latestVwapBlockCached) {
-                    latestVwapBlockCachedGlobal[pairString] = Number(latestVwapBlockCached.block);
+                    latestVwapBlockCachedGlobal[pairString] = latestVwapBlockCached;
                 }
             }
             const latestVwapForPair = latestVwapBlockCachedGlobal[pairString];
-            if(!latestVwapForPair || latestVwapForPair && priceData.block > latestVwapForPair) {
+            if(!latestVwapForPair || latestVwapForPair && ((priceData.block > Number(latestVwapForPair.block)) || (priceData.vwap != Number(latestVwapForPair.vwap)) || (priceData.dominantToken != latestVwapForPair.dominantToken))) {
                 if(!vwaps[pairString]) {
                     vwaps[pairString] = JSON.parse(await gcpContractStorage.fetchTokenVwaps(pair) || '[]');
                 }

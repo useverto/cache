@@ -17,7 +17,6 @@ const gcpContractStorage = new GcpContractStorageService(new GcpStorageService()
 const clobContract = String(process.env.CLOB_CONTRACT);
 
 Interceptors.setContractInterceptor(clobContract, async (contractId: string, state: any, interactionNumber: number, height: number) => {
-    console.log("Interceptor called");
     const { pairs }: { pairs: Array<any> } = state;
     if(pairs) {
         for (let pairItem of pairs) {
@@ -32,7 +31,8 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                 const vwapsForPair: Array<any> = JSON.parse(await gcpContractStorage.fetchTokenVwaps(pair) || '[]');
                 vwapsForPair.push({
                     block: priceData.block,
-                    vwap: priceData.vwap
+                    vwap: priceData.vwap,
+                    dominantToken: priceData.dominantToken
                 });
                 await gcpContractStorage.uploadVwaps(pair, vwapsForPair);
                 await gcpDatastoreService.saveFull<VwapsDatastore>({
@@ -42,7 +42,8 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                     data: {
                         pair: pairString,
                         block: priceData.block,
-                        vwap: priceData.vwap
+                        vwap: priceData.vwap,
+                        dominantToken: priceData.dominantToken
                     }
                 });
             }

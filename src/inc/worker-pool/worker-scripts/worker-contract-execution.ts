@@ -1,8 +1,7 @@
-import { ArweaveClientService } from "../../services/core/arweave/arweave-client.service";
-import { ContractService } from "../../services/contracts/contract.service";
+import {ArweaveClientService} from "../../services/core/arweave/arweave-client.service";
+import {ContractService} from "../../services/contracts/contract.service";
 import {cleanExecution} from "../../../utils/commons";
 import {Interceptors} from "smartweave-verto";
-import {Constants} from "../../constants";
 import {VwapsDatastore} from "../../services/core/gcp-datastore/kind-interfaces/ds-vwaps";
 import {GcpDatastoreService} from "verto-internals/services/gcp";
 import {GcpContractStorageService} from "../../services/core/gcp-contract-storage/gcp-contract-storage.service";
@@ -16,6 +15,8 @@ const gcpContractStorage = new GcpContractStorageService(new GcpStorageService()
 // Create a new reference in memory
 const clobContract = String(process.env.CLOB_CONTRACT);
 
+const vwaps: Record<any, Array<any>> = {};
+
 Interceptors.setContractInterceptor(clobContract, async (contractId: string, state: any, interactionNumber: number, height: number) => {
     const { pairs }: { pairs: Array<any> } = state;
     if(pairs) {
@@ -28,23 +29,13 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                 gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
             );
             if(!latestVwapBlockCached || latestVwapBlockCached && priceData.block > Number(latestVwapBlockCached.block)) {
-                const vwapsForPair: Array<any> = JSON.parse(await gcpContractStorage.fetchTokenVwaps(pair) || '[]');
-                vwapsForPair.push({
+                if(!vwaps[pairString]) {
+                    vwaps[pairString] = JSON.parse(await gcpContractStorage.fetchTokenVwaps(pair) || '[]');
+                }
+                vwaps[pairString].push({
                     block: priceData.block,
                     vwap: priceData.vwap,
                     dominantToken: priceData.dominantToken
-                });
-                await gcpContractStorage.uploadVwaps(pair, vwapsForPair);
-                await gcpDatastoreService.saveFull<VwapsDatastore>({
-                    // @ts-ignore
-                    kind: "LATEST_VWAPS",
-                    id: pairString,
-                    data: {
-                        pair: pairString,
-                        block: priceData.block,
-                        vwap: priceData.vwap,
-                        dominantToken: priceData.dominantToken
-                    }
                 });
             }
         }
@@ -66,6 +57,26 @@ addEventListener('message', async e => {
     try {
         console.log(`Processing ${contractId}`);
         const state = await contractService.processState(contractId);
+        if(contractId == clobContract) {
+            const vwapsIfAny = Object.keys(vwaps);
+            for (const pair of vwapsIfAny) {
+                const priceData = vwaps[pair];
+                const latestPriceData = priceData[priceData.length - 1];
+                // @ts-ignore
+                await gcpContractStorage.uploadVwaps(pair.split(","), vwaps[pair]);
+                await gcpDatastoreService.saveFull<VwapsDatastore>({
+                    // @ts-ignore
+                    kind: "LATEST_VWAPS",
+                    id: pair,
+                    data: {
+                        pair: pair,
+                        block: latestPriceData.block,
+                        vwap: latestPriceData.vwap,
+                        dominantToken: latestPriceData.dominantToken
+                    }
+                });
+            }
+        }
         // @ts-ignore
         postMessage({
             contractId,

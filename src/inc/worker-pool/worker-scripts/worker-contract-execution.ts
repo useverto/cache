@@ -35,7 +35,7 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                 }
             }
             const latestVwapForPair = latestVwapBlockCachedGlobal[pairString];
-            if(!latestVwapForPair || latestVwapForPair && ((priceData.block > Number(latestVwapForPair.block)) || (priceData.vwap != Number(latestVwapForPair.vwap)) || (priceData.dominantToken != latestVwapForPair.dominantToken))) {
+            if(!latestVwapForPair || latestVwapForPair && (((priceData.block > Number(latestVwapForPair.block)) || ((priceData.block >= Number(latestVwapForPair.block) && (priceData.vwap != Number(latestVwapForPair.vwap)) || (priceData.dominantToken != latestVwapForPair.dominantToken)))))) {
                 if(!vwaps[pairString]) {
                     vwaps[pairString] = JSON.parse(await gcpContractStorage.fetchTokenVwaps(pair) || '[]');
                 }

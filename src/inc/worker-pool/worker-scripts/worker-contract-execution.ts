@@ -26,9 +26,6 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
             if(!priceData) { return; }
             const pairString = pair.join(",");
             if(!latestVwapBlockCachedGlobal[pairString]) {
-                latestVwapBlockCachedGlobal[pairString] = undefined;
-            }
-            if(!latestVwapBlockCachedGlobal[pairString]) {
                 const latestVwapBlockCached = await gcpDatastoreService.getSingle<VwapsDatastore>(
                     // @ts-ignore
                     gcpDatastoreService.createKey("LATEST_VWAPS", pairString)
@@ -48,7 +45,7 @@ Interceptors.setContractInterceptor(clobContract, async (contractId: string, sta
                     dominantToken: priceData.dominantToken
                 });
 
-                latestVwapBlockCachedGlobal[pairString] = priceData.block;
+                latestVwapBlockCachedGlobal[pairString] = priceData;
             }
         }
     }

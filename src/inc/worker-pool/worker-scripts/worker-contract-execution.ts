@@ -15,7 +15,7 @@ const gcpContractStorage = new GcpContractStorageService(new GcpStorageService()
 // Create a new reference in memory
 const clobContract = String(process.env.CLOB_CONTRACT);
 
-const vwaps: Record<any, Array<any>> = {};
+let vwaps: Record<any, Array<any>> = {};
 
 Interceptors.setContractInterceptor(clobContract, async (contractId: string, state: any, interactionNumber: number, height: number) => {
     const { pairs }: { pairs: Array<any> } = state;
@@ -76,6 +76,7 @@ addEventListener('message', async e => {
                     }
                 });
             }
+            vwaps = {};
         }
         // @ts-ignore
         postMessage({

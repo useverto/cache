@@ -53,4 +53,16 @@ export class UsersDatastoreService {
             ]
         })
     }
+
+    async getUserBalancesForUsername(username: string) {
+        return this.queryUserBalances({
+            filters: [
+                {
+                    property: "username",
+                    operator: "=",
+                    value: username
+                }
+            ]
+        })
+    }
 }

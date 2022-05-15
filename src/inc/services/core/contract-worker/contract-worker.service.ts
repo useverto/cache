@@ -255,8 +255,13 @@ export class ContractWorkerService {
         const dataState: any = state?.state || {};
         const balancesInState = dataState?.balances;
         const addresses = Object.keys(balancesInState);
+        const communityContract = JSON.parse(await this.gcpContractStorage.fetchContractState(Constants.COMMUNITY_CONTRACT) || '{}');
+        const people = communityContract.people;
+        if(addresses.length <= 0) { return; }
         const tokenMetadata: any = await this.tokenDatastoreService.getToken(contractId) || {};
         for(let address of addresses) {
+            const username = people.map((user: any) => ({ username: user.username, addresses: user.addresses}))
+                .filter((user: any) => user.addresses.includes(address));
             await this.gcpDatastoreService.saveFull<UserBalanceDatastore>({
                 // @ts-ignore
                 kind: "USER_BALANCES",
@@ -268,7 +273,8 @@ export class ContractWorkerService {
                     balance: balancesInState[address] || 0,
                     contractId,
                     userAddress: address,
-                    type: tokenMetadata.type
+                    type: tokenMetadata.type,
+                    username: username
                 }
             })
         }

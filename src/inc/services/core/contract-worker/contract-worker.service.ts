@@ -266,7 +266,7 @@ export class ContractWorkerService {
             await this.gcpDatastoreService.saveFull<UserBalanceDatastore>({
                 // @ts-ignore
                 kind: "USER_BALANCES",
-                id: `${randomString(10)}-${randomString(10)}-${randomString(10)}-${randomString(5)}`,
+                id: `${contractId}-${address}`,
                 data: {
                     name: dataState.name,
                     ticker: dataState.ticker,

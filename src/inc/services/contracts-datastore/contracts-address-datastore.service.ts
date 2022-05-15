@@ -22,4 +22,23 @@ export class ContractsAddressDatastoreService {
         });
     }
 
+    async getContractsInUser(addressId: string) {
+        const queryContractsInUser = await this.queryContractsAddress(
+            {
+                filters: [{
+                    property: 'address',
+                    operator: '=',
+                    value: addressId
+                }]
+            }
+        );
+
+        if(queryContractsInUser.isEmpty()) {
+            return [];
+        } else {
+            const contracts = queryContractsInUser.entities;
+            return contracts.map((item) => item.contract);
+        }
+    }
+
 }

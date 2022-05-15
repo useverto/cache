@@ -35,6 +35,11 @@ export class UsersController {
         }
     }
 
+    @Get('balances/:address')
+    public async getBalancesForUsername(@Param('address') address: string) {
+        return await this.usersDatastoreService.getUserBalancesForAddress(address);
+    }
+
 
     @Get('contracts/:addressId')
     public async getContractsForUser(@Param('addressId') id: string): Promise<Array<string>> {

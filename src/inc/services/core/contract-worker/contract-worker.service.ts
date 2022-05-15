@@ -20,6 +20,7 @@ import {TokensDatastoreService} from "../../contracts-datastore/tokens-datastore
 import {Interceptors} from "smartweave-verto";
 import {VwapsDatastore} from "../gcp-datastore/kind-interfaces/ds-vwaps";
 import {randomString} from "../../../../utils/commons";
+import {UserBalanceDatastore} from "../gcp-datastore/kind-interfaces/ds-user-balance";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -185,6 +186,7 @@ export class ContractWorkerService {
         await this.deleteFromFailedContracts(contractId);
         await this.uploadAddress(contractId, state);
         await this.uploadBalanceNumbers(contractId, state);
+        await this.uploadUserBalances(contractId, state);
         const realState = state?.state;
         const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
         if(!getSingle) {
@@ -246,6 +248,29 @@ export class ContractWorkerService {
                     balanceLength: balancesLength
                 }
             });
+        }
+    }
+
+    private async uploadUserBalances(contractId: string, state: any): Promise<void> {
+        const dataState: any = state?.state || {};
+        const balancesInState = dataState?.balances;
+        const addresses = Object.keys(balancesInState);
+        const tokenMetadata: any = await this.tokenDatastoreService.getToken(contractId) || {};
+        for(let address of addresses) {
+            await this.gcpDatastoreService.saveFull<UserBalanceDatastore>({
+                // @ts-ignore
+                kind: "USER_BALANCES",
+                id: `${randomString(10)}-${randomString(10)}-${randomString(10)}-${randomString(5)}`,
+                data: {
+                    name: dataState.name,
+                    ticker: dataState.ticker,
+                    logo: dataState?.settings?.communityLogo,
+                    balance: balancesInState[address] || 0,
+                    contractId,
+                    userAddress: address,
+                    type: tokenMetadata.type
+                }
+            })
         }
     }
 

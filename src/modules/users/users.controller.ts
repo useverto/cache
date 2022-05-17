@@ -1,4 +1,4 @@
-import {Controller, Get, Param} from "@nestjs/common";
+import {Controller, Get, Param, Query} from "@nestjs/common";
 import {ContractsAddressDatastoreService} from "../../inc/services/contracts-datastore/contracts-address-datastore.service";
 import {TokensDatastoreService} from "../../inc/services/contracts-datastore/tokens-datastore.service";
 import {ArtFilter} from "../../inc/services/contracts-datastore/common-filters/token-filters";
@@ -35,6 +35,11 @@ export class UsersController {
         }
     }
 
+    @Get('balances/:address')
+    public async getBalancesForUsername(@Param('address') address: string, @Query('username') username: string) {
+        const byUsername = username === 'true';
+        return byUsername ? (await this.usersDatastoreService.getUserBalancesForUsername(address)) : (await this.usersDatastoreService.getUserBalancesForAddress(address));
+    }
 
     @Get('contracts/:addressId')
     public async getContractsForUser(@Param('addressId') id: string): Promise<Array<string>> {

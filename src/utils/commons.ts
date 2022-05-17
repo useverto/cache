@@ -9,7 +9,12 @@ export const addHoursToDate = (date: Date, hours: number): Date => {
 }
 
 export const cleanExecution = () => {
-    process.env = {};
+    const stage = String(process.env["STAGE"]);
+    const status = String(process.env["STATUS"]);
+    process.env = {
+        STAGE: stage,
+        STATUS: status
+    };
 }
 
 export const randomString = (length: number) => {

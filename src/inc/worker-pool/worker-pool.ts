@@ -518,7 +518,8 @@ export class WorkerPool {
             if(isExpired) {
                 if(feedbackFaultyContract
                     && this.globalFaultyContract
-                    && feedbackFaultyContract !== Constants.COMMUNITY_CONTRACT) {
+                    && feedbackFaultyContract !== Constants.COMMUNITY_CONTRACT
+                    && feedbackFaultyContract !== Constants.CLOB_CONTRACT) {
                     this.globalFaultyContract(feedbackFaultyContract);
                 }
                 this.hardClean(workerId, true);

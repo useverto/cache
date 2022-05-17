@@ -48,6 +48,7 @@ export class WorkerPoolMetrics {
     }
 
     public static async processAll(saverService: GcpDatastoreService) {
+        if(process.env.NO_WARMUP === 'true') { return; }
         return await Promise.allSettled([
             await this.process(saverService, MetricType.SCALED_WORKERS),
             await this.process(saverService, MetricType.NEW_CONTRACTS),

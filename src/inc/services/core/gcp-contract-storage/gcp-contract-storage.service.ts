@@ -1,27 +1,54 @@
 import {GcpStorageService} from "verto-internals/services/gcp/gcp-storage.service";
 import {Injectable} from "@nestjs/common";
 
-const stage = process.env["STAGE"];
-const isDevelop = stage === 'develop' || process.env["STATUS"] === 'dev';
-const PARENT_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
-const PARENT_ADDRESS_BUCKET_NAME = isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
-
-
 /**
  * This service interacts with the logic behind caching our contracts inside the Google CDN
  */
 @Injectable()
 export class GcpContractStorageService {
 
-    private readonly PARENT_BUCKET_NAME: string = PARENT_BUCKET_NAME;
-    private readonly PARENT_ADDRESS_BUCKET_NAME: string = PARENT_ADDRESS_BUCKET_NAME;
-    public static readonly S_PARENT_BUCKET_NAME = PARENT_BUCKET_NAME;
-    public static readonly S_PARENT_ADDRESS_BUCKET_NAME = PARENT_ADDRESS_BUCKET_NAME;
-    public static readonly S_IS_DEVELOP = isDevelop;
-    public static readonly S_STAGE = stage;
+    static get stage() {
+        return process.env["STAGE"];
+    }
+
+    static get isDevelop() {
+        const isDevelop = this.stage === 'develop' || process.env["STATUS"] === 'dev';
+        return isDevelop;
+    }
+
+    static get PARENT_BUCKET_NAME_STATIC() {
+        return this.isDevelop ? 'verto-exchange-contracts-stage' : 'verto-exchange-contracts';
+    }
+
+    static get PARENT_ADDRESS_BUCKET_NAME_STATIC() {
+        return this.isDevelop ? 'verto-exchange-contracts-addresses-stage' : 'verto-exchange-contracts-addresses';
+    }
+
+    static get S_PARENT_BUCKET_NAME() {
+        return this.PARENT_BUCKET_NAME_STATIC;
+    }
+
+    static get S_PARENT_ADDRESS_BUCKET_NAME() {
+        return this.PARENT_ADDRESS_BUCKET_NAME_STATIC;
+    }
+
+    get PARENT_BUCKET_NAME() {
+        return GcpContractStorageService.PARENT_BUCKET_NAME_STATIC;
+    }
+
+    get PARENT_ADDRESS_BUCKET_NAME() {
+        return GcpContractStorageService.PARENT_ADDRESS_BUCKET_NAME_STATIC;
+    }
+
+    static get S_IS_DEVELOP() {
+        return this.isDevelop;
+    }
+
+    static get S_STAGE() {
+        return this.stage;
+    }
 
     constructor(private readonly gcpStorage: GcpStorageService) {
-        console.log(`Detected Stage: ${stage} === Develop ? ${isDevelop}`);
         this.initializeParentBucket(this.PARENT_BUCKET_NAME);
         this.initializeParentBucket(this.PARENT_ADDRESS_BUCKET_NAME);
     }
@@ -33,16 +60,26 @@ export class GcpContractStorageService {
      * @param validityFile whether to upload the validity (in a separate file)
      */
     async uploadState(contractId: string, state: any, validityFile: boolean = false): Promise<Array<void>> {
+        const options = {
+            metadata: {
+                ["Cache-Control"]: "no-store",
+                    cacheControl: "no-store"
+            }
+        };
         try {
             const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
                 fileName: `${contractId}/${contractId}_state.json`,
-                fileContent: JSON.stringify(validityFile ? state["state"] : state, null, 2)
+                fileContent: JSON.stringify(validityFile ? state["state"] : state, null, 2),
+                // @ts-ignore
+                options
             });
 
             if (validityFile) {
                 const validityUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
                     fileName: `${contractId}/${contractId}_validity.json`,
-                    fileContent: JSON.stringify(state.validity, null, 2)
+                    fileContent: JSON.stringify(state.validity, null, 2),
+                    // @ts-ignore
+                    options
                 });
                 return [fileUpload, validityUpload];
             }
@@ -60,9 +97,38 @@ export class GcpContractStorageService {
         try {
             const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
                 fileName: `tokens/skeletons.json`,
-                fileContent: JSON.stringify(skeletons, null, 2)
+                fileContent: JSON.stringify(skeletons, null, 2),
+                options: {
+                    // @ts-ignore
+                    metadata: {
+                        ["Cache-Control"]: "no-store",
+                        cacheControl: "no-store"
+                    }
+                }
             });
 
+            return [fileUpload];
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Uploads vwaps for a given pair
+     */
+    async uploadVwaps(pair: [string, string], vwaps: Array<any>) {
+        try {
+            const fileUpload = await this.gcpStorage.uploadFile(this.PARENT_BUCKET_NAME, {
+                fileName: `vwaps/${pair[0]}_${pair[1]}.json`,
+                fileContent: JSON.stringify(vwaps, null, 2),
+                options: {
+                    // @ts-ignore
+                    metadata: {
+                        ["Cache-Control"]: "no-store",
+                        cacheControl: "no-store"
+                    }
+                }
+            });
             return [fileUpload];
         } catch {
             return [];
@@ -112,6 +178,20 @@ export class GcpContractStorageService {
 
     async fetchTokenSkeleton(): Promise<string> {
         return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `tokens/skeletons.json`);
+    }
+
+    async fetchTokenVwaps(pair: [string, string]): Promise<string | undefined> {
+        try {
+            const fileName = `vwaps/${pair[0]}_${pair[1]}.json`;
+            const file = (await this.gcpStorage.getBucket(this.PARENT_BUCKET_NAME).file(fileName).exists())[0];
+            if(file) {
+                return this.gcpStorage.fetchFileContent(this.PARENT_BUCKET_NAME, `vwaps/${pair[0]}_${pair[1]}.json`);
+            } else {
+                return undefined;
+            }
+        } catch {
+            return undefined;
+        }
     }
 
 }

@@ -30,6 +30,15 @@ export class ContractController {
         return this.contractWorkerService.sendContractToWorkerPool(id);
     }
 
+    @Post('save-clob')
+    @UseGuards(InternalAuthGuard)
+    saveClob(): any {
+        this.contractWorkerService.hardSendContract(process.env.CLOB_CONTRACT!);
+        return {
+            status: 'scheduled'
+        };
+    }
+
     @Post('execute/:id')
     @UseGuards(OnlyDevGuard)
     async processContract(@Param('id') id: string): Promise<ContractResult> {

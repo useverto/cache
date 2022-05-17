@@ -1,6 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import {DatastoreKinds, QueryableBase, QueryResult, GcpDatastoreService} from "verto-internals/services/gcp";
 import {CommunityPeopleDatastore} from "../core/gcp-datastore/kind-interfaces/ds-community-people";
+import {UserBalanceDatastore} from "../core/gcp-datastore/kind-interfaces/ds-user-balance";
 
 @Injectable()
 export class UsersDatastoreService {
@@ -29,4 +30,39 @@ export class UsersDatastoreService {
         });
     }
 
+    /**
+     * Query entity COMMUNITY_TOKENS based on {@link QueryableBase}
+     * @param data
+     */
+    async queryUserBalances(data: QueryableBase = {}): Promise<QueryResult<UserBalanceDatastore>> {
+        return await this.gcpDatastoreService.invokeQuery({
+            // @ts-ignore
+            kind: "USER_BALANCES",
+            ...data
+        });
+    }
+
+    async getUserBalancesForAddress(address: string) {
+        return this.queryUserBalances({
+            filters: [
+                {
+                    property: "userAddress",
+                    operator: "=",
+                    value: address
+                }
+            ]
+        })
+    }
+
+    async getUserBalancesForUsername(username: string) {
+        return this.queryUserBalances({
+            filters: [
+                {
+                    property: "username",
+                    operator: "=",
+                    value: username
+                }
+            ]
+        })
+    }
 }

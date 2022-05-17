@@ -17,6 +17,10 @@ import {CommunityContract} from "verto-internals/interfaces/contracts/community-
 import {ProcessSearchExecution} from "../../../processing/process-search-execution";
 import {getNameAndTickerAndLogoAndDescription} from "../../../../utils/tokens";
 import {TokensDatastoreService} from "../../contracts-datastore/tokens-datastore.service";
+import {Interceptors} from "smartweave-verto";
+import {VwapsDatastore} from "../gcp-datastore/kind-interfaces/ds-vwaps";
+import {randomString} from "../../../../utils/commons";
+import {UserBalanceDatastore} from "../gcp-datastore/kind-interfaces/ds-user-balance";
 
 /**
  * This service represents the interaction between contracts and the worker pool.
@@ -129,7 +133,8 @@ export class ContractWorkerService {
                         logo,
                         type: type || "custom",
                         lister: listerMetadata,
-                        items
+                        items,
+                        addressesLength: Object.keys(state?.balances || []).length
                     }
                 } catch {
                     return {}
@@ -178,14 +183,7 @@ export class ContractWorkerService {
 
     private async processOnReceive(contractId: string, state: any) {
         await this.gcpContractStorage.uploadState(contractId, state, true);
-        await this.deleteFromFailedContracts(contractId);
-        await this.uploadAddress(contractId, state);
-        await this.uploadBalanceNumbers(contractId, state);
         const realState = state?.state;
-        const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
-        if(!getSingle) {
-            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
-        }
         await this.gcpDatastoreService.saveFull<ContractsDatastore>({
             kind: DatastoreKinds.CONTRACTS,
             id: contractId,
@@ -200,6 +198,14 @@ export class ContractWorkerService {
                 allowMinting: realState?.allowMinting
             }
         });
+        await this.deleteFromFailedContracts(contractId);
+        await this.uploadAddress(contractId, state);
+        await this.uploadBalanceNumbers(contractId, state);
+        await this.uploadUserBalances(contractId, state);
+        const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
+        if(!getSingle) {
+            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
+        }
     }
 
     /**
@@ -242,6 +248,36 @@ export class ContractWorkerService {
                     balanceLength: balancesLength
                 }
             });
+        }
+    }
+
+    private async uploadUserBalances(contractId: string, state: any): Promise<void> {
+        const dataState: any = state?.state || {};
+        const balancesInState: any = dataState?.balances || {};
+        const addresses = Object.keys(balancesInState);
+        const communityContract = JSON.parse(await this.gcpContractStorage.fetchContractState(Constants.COMMUNITY_CONTRACT) || '{}');
+        const people: Array<any> = communityContract.people;
+        if(addresses.length <= 0) { return; }
+        const tokenMetadata: any = await this.tokenDatastoreService.getToken(contractId) || {};
+        for(let address of addresses) {
+            const userdata = people.map((user: any) => ({ username: user.username, addresses: user.addresses}))
+                .find((user: any) => user.addresses.includes(address));
+            const username = userdata?.username;
+            await this.gcpDatastoreService.saveFull<UserBalanceDatastore>({
+                // @ts-ignore
+                kind: "USER_BALANCES",
+                id: `${contractId}-${address}`,
+                data: {
+                    name: dataState.name,
+                    ticker: dataState.ticker,
+                    logo: dataState?.settings?.communityLogo,
+                    balance: balancesInState[address] || 0,
+                    contractId,
+                    userAddress: address,
+                    type: tokenMetadata.type,
+                    username: username
+                }
+            })
         }
     }
 
@@ -338,6 +374,7 @@ export class ContractWorkerService {
      * Recover all the contracts (failed and recoverable) and send them to the worker pool
      */
     private async recoverContracts() {
+        if(process.env.NO_WARMUP === 'true') { return; }
         const contracts = [
             ...await this.recoverableContractDatastoreService.getAllAndClean(),
             ...await this.recoverableContractDatastoreService.getAllAndClean('failed')

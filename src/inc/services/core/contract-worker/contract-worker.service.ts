@@ -183,15 +183,7 @@ export class ContractWorkerService {
 
     private async processOnReceive(contractId: string, state: any) {
         await this.gcpContractStorage.uploadState(contractId, state, true);
-        await this.deleteFromFailedContracts(contractId);
-        await this.uploadAddress(contractId, state);
-        await this.uploadBalanceNumbers(contractId, state);
-        await this.uploadUserBalances(contractId, state);
         const realState = state?.state;
-        const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
-        if(!getSingle) {
-            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
-        }
         await this.gcpDatastoreService.saveFull<ContractsDatastore>({
             kind: DatastoreKinds.CONTRACTS,
             id: contractId,
@@ -206,6 +198,14 @@ export class ContractWorkerService {
                 allowMinting: realState?.allowMinting
             }
         });
+        await this.deleteFromFailedContracts(contractId);
+        await this.uploadAddress(contractId, state);
+        await this.uploadBalanceNumbers(contractId, state);
+        await this.uploadUserBalances(contractId, state);
+        const getSingle = await this.gcpDatastoreService.getSingle(this.gcpDatastoreService.createKey(DatastoreKinds.CONTRACTS, contractId));
+        if(!getSingle) {
+            WorkerPoolMetrics.addMetric(MetricType.NEW_CONTRACTS, (current) => current + 1);
+        }
     }
 
     /**

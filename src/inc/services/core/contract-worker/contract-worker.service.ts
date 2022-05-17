@@ -253,7 +253,7 @@ export class ContractWorkerService {
 
     private async uploadUserBalances(contractId: string, state: any): Promise<void> {
         const dataState: any = state?.state || {};
-        const balancesInState = dataState?.balances;
+        const balancesInState: any = dataState?.balances || {};
         const addresses = Object.keys(balancesInState);
         const communityContract = JSON.parse(await this.gcpContractStorage.fetchContractState(Constants.COMMUNITY_CONTRACT) || '{}');
         const people: Array<any> = communityContract.people;
